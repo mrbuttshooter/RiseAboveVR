@@ -18,6 +18,46 @@ namespace AcrophobiaVR.EditorTools
         public const string SceneDir = Root + "/Scenes";
 
         static readonly Dictionary<string, Material> Cache = new Dictionary<string, Material>();
+        static readonly Dictionary<string, Vector2> TileByName = new Dictionary<string, Vector2>();
+
+        /// <summary>Material names that get procedural PBR textures (albedo + normal, facades also lit-window emission).</summary>
+        static readonly Dictionary<string, Surface> SurfaceFor = new Dictionary<string, Surface>
+        {
+            { "Concrete", Surface.Concrete }, { "RoofGrey", Surface.Concrete }, { "Stone", Surface.Concrete }, { "CafeWall", Surface.Concrete },
+            { "Asphalt", Surface.Asphalt }, { "Pavement", Surface.Pavement }, { "Path", Surface.Pavement },
+            { "Grass", Surface.Grass }, { "MeadowGrass", Surface.Grass }, { "Dirt", Surface.Dirt },
+            { "Deck", Surface.Wood }, { "Plank", Surface.Wood }, { "Bench", Surface.Wood }, { "BenchWood", Surface.Wood }, { "DoorWood", Surface.Wood }, { "TankWood", Surface.Wood },
+            { "SteelRed", Surface.Metal }, { "SteelDark", Surface.Metal }, { "Scaffold", Surface.Metal }, { "RailMetal", Surface.Metal }, { "CraneYellow", Surface.Metal },
+            { "ContainerBlue", Surface.Metal }, { "ContainerWhite", Surface.Metal }, { "LampMetal", Surface.Metal },
+            { "Grate", Surface.Grate }, { "Tile", Surface.Tiles }, { "RoofGravel", Surface.RoofGravel },
+            { "Bldg1", Surface.BrickFacade }, { "Bldg2", Surface.PlasterFacade }, { "Bldg3", Surface.OfficeFacade }, { "Bldg4", Surface.BrickFacade },
+            { "Glass Tower", Surface.GlassFacade }, { "TowerDark", Surface.GlassFacade },
+        };
+
+        /// <summary>Surfaces whose albedo already carries natural colour, so the material tint is kept near white.</summary>
+        static bool NaturalColour(Surface s) => s == Surface.Grass || s == Surface.Dirt || s == Surface.Asphalt || s == Surface.Wood || s == Surface.GlassFacade;
+
+        static void ApplySurface(Material m, string name, Color color)
+        {
+            if (!SurfaceFor.TryGetValue(name, out var s)) return;
+            var ts = ProceduralTextures.Get(s);
+            TileByName[name] = ts.tileMeters;
+            if (NaturalColour(s)) m.SetColor("_BaseColor", Color.Lerp(Color.white, color, 0.25f));
+            if (ts.albedo != null) { m.SetTexture("_BaseMap", ts.albedo); m.mainTexture = ts.albedo; }
+            if (ts.normal != null)
+            {
+                m.SetTexture("_BumpMap", ts.normal);
+                m.SetFloat("_BumpScale", 1f);
+                m.EnableKeyword("_NORMALMAP");
+            }
+            if (ts.emission != null)
+            {
+                m.SetTexture("_EmissionMap", ts.emission);
+                m.SetColor("_EmissionColor", new Color(1.4f, 1.3f, 1.15f));
+                m.EnableKeyword("_EMISSION");
+                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            }
+        }
 
         public static void EnsureFolders()
         {
@@ -53,12 +93,17 @@ namespace AcrophobiaVR.EditorTools
 
         public static Material Mat(string name, Color color, float smoothness = 0.3f, float metallic = 0f)
         {
-            if (Cache.TryGetValue(name, out var cached) && cached != null) return cached;
+            if (Cache.TryGetValue(name, out var cached) && cached != null)
+            {
+                if (SurfaceFor.TryGetValue(name, out var cs) && !TileByName.ContainsKey(name)) TileByName[name] = ProceduralTextures.TileMeters(cs);
+                return cached;
+            }
             var m = new Material(Lit);
             m.SetColor("_BaseColor", color);
             m.SetFloat("_Smoothness", smoothness);
             m.SetFloat("_Metallic", metallic);
             m.enableInstancing = true;
+            ApplySurface(m, name, color);
             return Save(name, m);
         }
 
@@ -165,6 +210,7 @@ namespace AcrophobiaVR.EditorTools
             if (euler.HasValue) go.transform.localRotation = Quaternion.Euler(euler.Value);
             if (mat != null) go.GetComponent<Renderer>().sharedMaterial = mat;
             if (!collider) Object.DestroyImmediate(go.GetComponent<Collider>());
+            if (type == PrimitiveType.Cube && mat != null && TileByName.TryGetValue(mat.name, out var tile)) MeshUtil.ApplyTiledUVs(go, tile);
             else if (type == PrimitiveType.Cylinder || type == PrimitiveType.Capsule || type == PrimitiveType.Sphere) { }
             if (isStatic) GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             return go;
@@ -289,6 +335,8 @@ namespace AcrophobiaVR.EditorTools
             l.color = color;
             l.intensity = intensity;
             l.shadows = LightShadows.Soft;
+            l.shadowStrength = 0.9f;
+            l.shadowNormalBias = 0.3f;
             go.transform.rotation = Quaternion.Euler(euler);
             RenderSettings.sun = l;
             return l;
@@ -390,8 +438,10 @@ namespace AcrophobiaVR.EditorTools
         /// <summary>Random city blocks of boxes, avoiding a rectangle where the level is.</summary>
         public static void City(Transform parent, Vector2 center, int halfCount, float spacing, Vector2 heightRange, Rect avoid, int seed, Material[] palette, Material windowMat, float groundY = 0f)
         {
+            // Facade textures (with lit windows in their emission maps) replace the old glowing window bands.
             var rng = new System.Random(seed);
             var city = Group("City", parent).transform;
+            int roofProps = 0;
             for (int ix = -halfCount; ix <= halfCount; ix++)
             for (int iz = -halfCount; iz <= halfCount; iz++)
             {
@@ -404,48 +454,35 @@ namespace AcrophobiaVR.EditorTools
                 float t = (float)rng.NextDouble();
                 float h = Mathf.Lerp(heightRange.x, heightRange.y, t * t);
                 var mat = palette[rng.Next(palette.Length)];
-                var b = Box("Building", city, new Vector3(x, groundY + h * 0.5f, z), new Vector3(w, h, d), mat, false);
-                if (windowMat != null && h > 12f)
+                Box("Building", city, new Vector3(x, groundY + h * 0.5f, z), new Vector3(w, h, d), mat, false);
+                // Tall towers get a setback crown, like real skyscrapers.
+                if (h > 60f && rng.NextDouble() < 0.6)
                 {
-                    // A few lit window bands on the larger towers
-                    int bands = Mathf.Min(6, Mathf.FloorToInt(h / 25f));
-                    for (int k = 1; k <= bands; k++)
-                    {
-                        float y = groundY + h * k / (bands + 1f);
-                        Box("Windows", city, new Vector3(x, y, z), new Vector3(w + 0.1f, 0.8f, d + 0.1f), windowMat, false);
-                    }
+                    float ch = h * (0.12f + (float)rng.NextDouble() * 0.12f);
+                    Box("Crown", city, new Vector3(x, groundY + h + ch * 0.5f, z), new Vector3(w * 0.7f, ch, d * 0.7f), mat, false);
+                    h += ch;
                 }
-                if (rng.NextDouble() < 0.3)
-                    Box("Roof", city, new Vector3(x, groundY + h + 1.5f, z), new Vector3(w * 0.4f, 3f, d * 0.4f), palette[rng.Next(palette.Length)], false);
+                // Roof parapet edge and gravel roof
+                Box("Parapet", city, new Vector3(x, groundY + h + 0.4f, z), new Vector3(w + 0.3f, 0.8f, d + 0.3f), Mat("RoofGrey", new Color(0.5f, 0.52f, 0.55f)), false);
+                Box("RoofTop", city, new Vector3(x, groundY + h + 0.45f, z), new Vector3(w - 0.4f, 0.8f, d - 0.4f), Mat("RoofGravel", new Color(0.55f, 0.55f, 0.55f)), false);
+                if (roofProps < 40 && rng.NextDouble() < 0.55)
+                {
+                    roofProps++;
+                    Props.RooftopUnits(city, new Vector3(x, groundY + h + 0.85f, z), new Vector2(w - 1f, d - 1f), rng.Next());
+                }
             }
         }
 
+        static int Seed(Vector3 p) => Mathf.RoundToInt(p.x * 73.1f + p.y * 19.7f + p.z * 37.3f);
+
         public static void Tree(Transform parent, Vector3 basePos, float scale, Material trunk, Material leaves)
-        {
-            Cyl("Trunk", parent, basePos, 0.15f * scale, 2.2f * scale, trunk, true);
-            Sphere("Canopy", parent, basePos + Vector3.up * 2.8f * scale, 2.2f * scale, leaves);
-            Sphere("Canopy2", parent, basePos + new Vector3(0.6f, 2.4f, 0.3f) * scale, 1.5f * scale, leaves);
-        }
+            => Props.Tree(parent, basePos, scale, Seed(basePos));
 
         public static void Car(Transform parent, Vector3[] loop, float offset, float speed, Material body, Material glass)
-        {
-            var car = Group("Car", parent);
-            Box("Body", car.transform, new Vector3(0, 0.45f, 0), new Vector3(1.8f, 0.7f, 4.2f), body, false, false);
-            Box("Cabin", car.transform, new Vector3(0, 1.05f, -0.2f), new Vector3(1.6f, 0.55f, 2.2f), glass, false, false);
-            var mover = car.AddComponent<LoopMover>();
-            mover.points = loop;
-            mover.speed = speed;
-            mover.startOffset = offset;
-        }
+            => Props.Car(parent, loop, offset, speed, body != null ? body.GetColor("_BaseColor") : Color.red, Mathf.RoundToInt(offset * 1000f) + Mathf.RoundToInt(speed * 7f));
 
         public static void Person(Transform parent, Vector3 basePos, Material clothes, Material skin)
-        {
-            var p = Group("Person", parent).transform;
-            p.localPosition = basePos;
-            Prim(PrimitiveType.Capsule, "Body", p, new Vector3(0, 0.75f, 0), new Vector3(0.45f, 0.6f, 0.35f), clothes, false);
-            Sphere("Head", p, new Vector3(0, 1.6f, 0), 0.28f, skin);
-        }
-
+            => Props.Person(parent, basePos, clothes != null ? clothes.GetColor("_BaseColor") : Color.blue, Seed(basePos));
         public static Transform LookTarget(string name, Transform parent, Vector3 pos, float ringRadius)
         {
             var t = Point(name, parent, pos);

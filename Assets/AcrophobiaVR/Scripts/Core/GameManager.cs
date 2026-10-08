@@ -29,9 +29,9 @@ namespace AcrophobiaVR
 
         public static readonly string[] LevelDescriptions =
         {
-            "A 2nd-floor balcony (about 6 m) with full railings. Walk to the edge and look down at the street.",
-            "Ride an open lift up the scaffolding (25 m) and cross a wide plank with handrails.",
-            "A steel beam between two towers (150 m). Cross it and rescue the stranded cat.",
+            "Look down from a cafe balcony and walk a glass skywalk.",
+            "Ride an open lift, cross planks, climb the crane.",
+            "Cross a beam between towers and rescue a cat.",
         };
 
         const string UnlockKey = "acro_highest_unlocked";

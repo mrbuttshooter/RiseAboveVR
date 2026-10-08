@@ -48,6 +48,8 @@ namespace AcrophobiaVR.EditorTools
             for (int i = 0; i < 10; i++)
                 Car(env, loop, i / 10f, 7f + (i % 3), Mat("Car" + (i % 4), carColors[i % 4], 0.7f, 0.4f), carGlass);
 
+            Props.StreetDetails(env, new Vector3(-90f, 0.16f, -5.5f), new Vector3(90f, 0.16f, -5.5f), 2f, 7);
+            Props.StreetDetails(env, new Vector3(-90f, 0.16f, -18.5f), new Vector3(90f, 0.16f, -18.5f), 2f, 8);
             // Neighbouring buildings along the street + city behind
             for (int i = -6; i <= 6; i++)
             {

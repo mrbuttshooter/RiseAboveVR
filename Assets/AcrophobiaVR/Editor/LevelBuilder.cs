@@ -30,6 +30,7 @@ namespace AcrophobiaVR.EditorTools
         public static void BuildAllNoPrompt()
         {
             EnsureFolders();
+            GraphicsSetup.ConfigureProject();
             BuildMenu();
             BuildLevel1();
             BuildLevel2();
@@ -63,11 +64,18 @@ namespace AcrophobiaVR.EditorTools
 
         static Scene NewScene()
         {
+            MeshUtil.ClearCache();
             return EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
         static void Save(Scene scene, string name)
         {
+            // Post-processing mood, reflection probe and camera post-FX for this scene.
+            bool l1 = name.StartsWith("Level1"), l2 = name.StartsWith("Level2"), l3 = name.StartsWith("Level3");
+            string mood = l1 ? "sunset" : l2 ? "noon" : l3 ? "golden" : "park";
+            Vector3 probe = l3 ? new Vector3(25f, 152f, 0f) : l2 ? new Vector3(10f, 26f, 10f) : l1 ? new Vector3(0f, 8f, -3f) : new Vector3(0f, 3f, 5f);
+            Vector3 probeSize = l3 ? new Vector3(200f, 80f, 200f) : new Vector3(120f, 60f, 120f);
+            GraphicsSetup.ApplyToScene(mood, probe, probeSize);
             Lightmapping.giWorkflowMode = Lightmapping.GIWorkflowMode.OnDemand;
             EditorSceneManager.SaveScene(scene, SceneDir + "/" + name + ".unity");
         }
@@ -185,6 +193,8 @@ namespace AcrophobiaVR.EditorTools
                 float r = 14f + (float)rng.NextDouble() * 40f;
                 Tree(env, new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r), 1f + (float)rng.NextDouble(), trunk, leaves);
             }
+            Props.StreetDetails(env, new Vector3(0f, 0.02f, -2f), new Vector3(0f, 0.02f, 13f), 2.4f, 21);
+            Props.StreetDetails(env, new Vector3(-8f, 0.02f, 9f), new Vector3(8f, 0.02f, 9f), 2.4f, 22);
             // Fountain behind the player
             Cyl("FountainBasin", env, new Vector3(0, 0, -6), 2.2f, 0.5f, stone);
             Cyl("FountainWater", env, new Vector3(0, 0.45f, -6), 2f, 0.06f, Mat("Pond", new Color(0.35f, 0.65f, 0.85f), 0.95f), false);

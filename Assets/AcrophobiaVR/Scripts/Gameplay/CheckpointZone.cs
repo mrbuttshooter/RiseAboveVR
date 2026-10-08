@@ -20,6 +20,7 @@ namespace AcrophobiaVR
             SessionLogger.Log(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, "checkpoint", label);
             HeadHud.Instance.ShowMessage("Checkpoint reached: " + label, 2.5f);
             ProceduralAudio.PlayChime(1f);
+            FearSystem.Relief(0.2f);
             if (!string.IsNullOrEmpty(companionLine)) Companion.Say(companionLine);
             if (offerBreathingBreak && !BreathingGuide.Active)
                 BreathingGuide.Show(2);

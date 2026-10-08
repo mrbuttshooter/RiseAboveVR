@@ -24,6 +24,29 @@ Rise Above turns those principles into game design:
 | Encouragement | **Pip**, a little glowing bird-drone companion who explains tasks and reassures the player. |
 | No punishment | Slipping fades gently back to the last checkpoint - no falling animation. |
 
+## Feeling the fear - the player's point of view
+
+The **Fear System** simulates acrophobia from inside the player's head:
+
+- Fear is measured realistically: rays sample the drop *around and below the head* (standing on a 30 cm beam at 150 m
+  is very different from standing behind a railing at 6 m) and *where the player is looking* - glass floors don't count as ground.
+- **Looking down into the drop** makes it surge: tunnel vision closes in, colour drains, chromatic shimmer, a vertigo
+  "dolly-zoom" (desktop), a pounding heartbeat you hear and feel in the controllers, and a live **BPM** readout (70 -> 170).
+- Hold your gaze at maximum fear and a **panic wave** hits: the edges pulse red, a ringing tone, Pip flies *above your head*
+  and the HUD shouts **LOOK UP**. Looking at the sky calms you down; freezing without looking up for too long = slip.
+- **Coping tools**: look up, crouch, breathe with the guide, the Calm Meadow. Finishing a task or reaching a checkpoint gives relief.
+- The look-down tasks become a push-and-pull: stare at the target while your heart races, look up to recover, look down again.
+  Task progress freezes while you are panicking - exactly the approach / cope / approach loop used in exposure therapy.
+- The level summary and CSV log record **peak heart rate** and **panic waves beaten** (`peak_bpm`, `panics_beaten`, `panic_start`, `panic_recovered_seconds`, `panic_froze`).
+
+## Graphics
+
+Procedurally generated PBR textures (brick / office / glass facades with lit windows, concrete, asphalt, paving, wood,
+brushed metal, grating, gravel - all with normal maps) tiled at real-world scale, URP post-processing per level mood
+(ACES tonemapping, bloom, colour grading, white balance, vignette, SSAO on PC), soft shadows, reflection probes, detailed
+props (cars with wheels and lights, layered trees, street lamps, benches, people, rooftop machinery). On Quest the heavy
+post-processing and probes switch off automatically (`PlatformGraphics`).
+
 ## The levels
 
 **Park hub (main menu)** - level portals, exposure-mode picker, trophy wall with before/after anxiety bars, help board.

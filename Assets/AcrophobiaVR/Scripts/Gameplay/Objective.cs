@@ -25,6 +25,7 @@ namespace AcrophobiaVR
             IsComplete = true;
             SessionLogger.Log(SceneManager.GetActiveScene().name, "objective_complete", description);
             ProceduralAudio.PlaySuccess();
+            FearSystem.Relief(0.3f);
             if (!string.IsNullOrEmpty(companionLineOnComplete)) Companion.Say(companionLineOnComplete);
             Completed?.Invoke(this);
         }

@@ -31,10 +31,17 @@ namespace AcrophobiaVR
             Vector3 dir = target.position - head.position;
             bool looking = dir.magnitude < maxViewDistance && Vector3.Angle(head.forward, dir) < maxAngle;
 
+            if (FearSystem.Panicking)
+            {
+                // Fear takes over - the task can't progress until the player has calmed down.
+                progress = Mathf.Max(0f, progress - Time.deltaTime);
+                return;
+            }
+
             if (looking)
             {
                 progress += Time.deltaTime;
-                HeadHud.Instance.ShowProgress(progress / holdSeconds, spotLabel);
+                HeadHud.Instance.ShowProgress(progress / holdSeconds, FearSystem.Fear > 0.7f ? spotLabel + "  (heart pounding - hold on!)" : spotLabel);
                 if (progress >= holdSeconds)
                 {
                     Complete();

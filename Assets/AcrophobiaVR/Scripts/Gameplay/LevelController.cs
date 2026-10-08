@@ -36,6 +36,7 @@ namespace AcrophobiaVR
         void Awake()
         {
             Instance = this;
+            if (GetComponent<FearSystem>() == null) gameObject.AddComponent<FearSystem>();
         }
 
         IEnumerator Start()
@@ -163,6 +164,8 @@ namespace AcrophobiaVR
         {
             float seconds = Time.time - startTime;
             SessionLogger.Log(SceneName, "level_complete_seconds", seconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture));
+            SessionLogger.Log(SceneName, "peak_bpm", FearSystem.PeakBpm.ToString());
+            SessionLogger.Log(SceneName, "panics_beaten", FearSystem.PanicsBeaten.ToString());
             Companion.Say(finishLine, 5f);
             ProceduralAudio.PlayFanfare();
             onFinale?.Invoke();
@@ -189,7 +192,7 @@ namespace AcrophobiaVR
             string body =
                 "<size=70><color=#FFD84D>" + UIFactory.Stars(stars) + "</color></size>\n" +
                 "Time " + FormatTime(seconds) + "     Slips " + Slips + "     Courage stars " + CourageStar.Collected + "/" + CourageStar.Total + "\n" +
-                "Anxiety " + before + " \u2192 " + after + "\n\n" + change;
+                "Anxiety " + before + " \u2192 " + after + "     Peak heart rate " + FearSystem.PeakBpm + " BPM     Panic waves beaten " + FearSystem.PanicsBeaten + "\n\n" + change;
 
             bool hasNext = levelIndex + 1 < GameManager.LevelScenes.Length;
             if (hasNext)

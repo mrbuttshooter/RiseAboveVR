@@ -74,6 +74,9 @@ namespace AcrophobiaVR
             if (flatFwd.sqrMagnitude < 0.01f) flatFwd = transform.forward;
             Vector3 right = Vector3.Cross(Vector3.up, flatFwd);
             Vector3 target = head.position + flatFwd * 0.9f + right * 0.55f + Vector3.up * (-0.05f + Mathf.Sin(Time.time * 2.1f) * 0.05f);
+            // During a panic wave Pip climbs above the player's head, glowing, so their gaze follows it up to the sky.
+            if (FearSystem.Panicking)
+                target = head.position + flatFwd * 1.1f + Vector3.up * (1.6f + Mathf.Sin(Time.time * 3f) * 0.1f);
             transform.position = Vector3.SmoothDamp(transform.position, target, ref velocity, 0.45f);
             Vector3 look = head.position - transform.position;
             if (look.sqrMagnitude > 0.001f)

@@ -64,7 +64,16 @@ Rise Above turns those principles into game design:
 Desktop mode switches on automatically when no headset is detected (or start the build with `-desktop`),
 so the whole game can be played and presented on a normal laptop.
 
-## Running it
+## Ready-made builds
+
+| Build | Where | How to run |
+|---|---|---|
+| Windows (PC, desktop mode or PC VR) | `E:\Unity_project\Builds\Windows\RiseAboveVR.exe` | Double-click. With no headset it starts in desktop mode. With Quest Link / SteamVR running it starts in VR. Add `-desktop` to force desktop mode. |
+| Meta Quest (standalone) | `E:\Unity_project\Builds\Quest\RiseAboveVR.apk` | Enable Developer Mode on the Quest, connect by USB, then `adb install -r RiseAboveVR.apk` (or drag it into SideQuest). Find it under *Unknown Sources*. |
+
+Screenshots from the play-test are in the `Screenshots/` folder (good for the report/presentation).
+
+## Running it in Unity
 
 1. Open the folder `RiseAboveVR` with **Unity 6000.3.25f1** (Unity 6 LTS).
 2. Menu **Rise Above > Build All Scenes** (already done once - re-run after changing level code).

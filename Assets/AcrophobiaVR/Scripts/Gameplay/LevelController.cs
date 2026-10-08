@@ -190,20 +190,22 @@ namespace AcrophobiaVR
             else change = "It felt harder this time, and you still finished. That counts. Try Gentle mode or a breathing break next time.";
 
             string body =
-                "<size=70><color=#FFD84D>" + UIFactory.Stars(stars) + "</color></size>\n" +
+                "\n\n" +
                 "Time " + FormatTime(seconds) + "     Slips " + Slips + "     Courage stars " + CourageStar.Collected + "/" + CourageStar.Total + "\n" +
-                "Anxiety " + before + " \u2192 " + after + "     Peak heart rate " + FearSystem.PeakBpm + " BPM     Panic waves beaten " + FearSystem.PanicsBeaten + "\n\n" + change;
+                "Anxiety " + before + " to " + after + "     Peak heart rate " + FearSystem.PeakBpm + " BPM     Panic waves beaten " + FearSystem.PanicsBeaten + "\n\n" + change;
 
             bool hasNext = levelIndex + 1 < GameManager.LevelScenes.Length;
+            Dialog summary;
             if (hasNext)
-                Dialog.Show(levelTitle + " complete", body,
+                summary = Dialog.Show(levelTitle + " complete", body,
                     new Dialog.Choice("Next level", () => GameManager.Instance.LoadLevel(levelIndex + 1), UIFactory.Calm * 0.8f),
                     new Dialog.Choice("Replay", () => GameManager.Instance.ReloadCurrent()),
                     new Dialog.Choice("Menu", () => GameManager.Instance.LoadMenu()));
             else
-                Dialog.Show("You rose above!", body + "\n\nYou have completed every level.",
+                summary = Dialog.Show("You rose above!", body + "\n\nYou have completed every level.",
                     new Dialog.Choice("Replay", () => GameManager.Instance.ReloadCurrent()),
                     new Dialog.Choice("Back to the park", () => GameManager.Instance.LoadMenu(), UIFactory.Calm * 0.8f));
+            UIFactory.StarRow(summary.Content, stars, 3, new Vector2(0, 215), 64f);
         }
 
         public static string FormatTime(float seconds)

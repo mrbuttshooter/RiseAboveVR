@@ -59,7 +59,7 @@ namespace AcrophobiaVR
         Image edgeImage;
         Canvas edgeCanvas;
         Transform heartPanel;
-        Text heartText;
+        TMPro.TMP_Text heartText;
         Image heartIcon;
         AudioSource audioSource;
         AudioClip heartClip;
@@ -309,7 +309,7 @@ namespace AcrophobiaVR
             if (Time.time > nextLookUpHint)
             {
                 nextLookUpHint = Time.time + 2.2f;
-                HeadHud.Instance.ShowMessage("↑  LOOK UP  ↑\nfind the sky and breathe", 2f);
+                HeadHud.Instance.ShowMessage("<size=130%><b>LOOK UP!</b></size>\nfind the sky and breathe", 2f);
             }
             if (lookingUp) lookUpTimer += dt;
 

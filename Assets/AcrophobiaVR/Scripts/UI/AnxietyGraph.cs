@@ -18,8 +18,8 @@ namespace AcrophobiaVR
             var root = canvas.transform;
             UIFactory.FullPanel(root, UIFactory.PanelColor);
             UIFactory.Label(root, "Trophy wall - your anxiety over time", 52, new Vector2(0, 390), new Vector2(1450, 80), TextAnchor.MiddleCenter, UIFactory.Gold, FontStyle.Bold);
-            var legend = UIFactory.Label(root, "<color=#FF8C4D>\u25A0 before level</color>     <color=#73D999>\u25A0 after level</color>     (0 = calm, 10 = panic)", 28, new Vector2(0, 330), new Vector2(1400, 50));
-            legend.supportRichText = true;
+            var legend = UIFactory.Label(root, "<color=#FF8C4D>Orange = before the level</color>     <color=#73D999>Green = after</color>     (0 calm, 10 panic)", 28, new Vector2(0, 330), new Vector2(1400, 50));
+            legend.richText = true;
 
             const float chartH = 420f;
             for (int level = 0; level < GameManager.LevelScenes.Length; level++)

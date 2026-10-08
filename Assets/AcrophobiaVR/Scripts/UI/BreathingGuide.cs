@@ -15,8 +15,8 @@ namespace AcrophobiaVR
 
         Image orb;
         Image halo;
-        Text phase;
-        Text count;
+        TMPro.TMP_Text phase;
+        TMPro.TMP_Text count;
         int cycles;
         bool loopForever;
         Action onDone;

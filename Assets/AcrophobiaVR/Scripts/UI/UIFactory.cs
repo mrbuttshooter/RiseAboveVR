@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -133,23 +134,45 @@ namespace AcrophobiaVR
             return img;
         }
 
-        public static Text Label(Transform parent, string text, int fontSize, Vector2 pos, Vector2 size,
+        /// <summary>
+        /// Crisp TextMeshPro (signed-distance-field) label. SDF text stays sharp at any distance and in a headset,
+        /// unlike the legacy bitmap Text which looks blurry/jagged in world space.
+        /// </summary>
+        public static TextMeshProUGUI Label(Transform parent, string text, int fontSize, Vector2 pos, Vector2 size,
             TextAnchor align = TextAnchor.MiddleCenter, Color? color = null, FontStyle style = FontStyle.Normal)
         {
-            var t = new GameObject("Label", typeof(RectTransform)).AddComponent<Text>();
+            var t = new GameObject("Label", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
             t.transform.SetParent(parent, false);
-            t.font = Font;
+            if (TMP_Settings.defaultFontAsset != null) t.font = TMP_Settings.defaultFontAsset;
             t.text = text;
             t.fontSize = fontSize;
-            t.fontStyle = style;
-            t.alignment = align;
+            t.fontStyle = style == FontStyle.Bold || style == FontStyle.BoldAndItalic ? FontStyles.Bold
+                : style == FontStyle.Italic ? FontStyles.Italic : FontStyles.Normal;
+            t.alignment = ToTmp(align);
             t.color = color ?? Color.white;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.textWrappingMode = TextWrappingModes.Normal;
+            t.overflowMode = TextOverflowModes.Overflow;
+            t.richText = true;
             t.raycastTarget = false;
             t.rectTransform.anchoredPosition = pos;
             t.rectTransform.sizeDelta = size;
             return t;
+        }
+
+        static TextAlignmentOptions ToTmp(TextAnchor a)
+        {
+            switch (a)
+            {
+                case TextAnchor.UpperLeft: return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter: return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight: return TextAlignmentOptions.TopRight;
+                case TextAnchor.MiddleLeft: return TextAlignmentOptions.Left;
+                case TextAnchor.MiddleRight: return TextAlignmentOptions.Right;
+                case TextAnchor.LowerLeft: return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter: return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight: return TextAlignmentOptions.BottomRight;
+                default: return TextAlignmentOptions.Center;
+            }
         }
 
         public static Button Button(Transform parent, string text, Vector2 pos, Vector2 size, Color color,
@@ -198,11 +221,64 @@ namespace AcrophobiaVR
             return img;
         }
 
-        public static string Stars(int count, int max = 3)
+        /// <summary>Plain-text star count (no special glyphs, works with any font).</summary>
+        public static string Stars(int count, int max = 3) => count + " / " + max + " stars";
+
+        static Sprite star;
+
+        /// <summary>Procedurally drawn, anti-aliased five-point star sprite.</summary>
+        public static Sprite Star
         {
-            var s = new System.Text.StringBuilder();
-            for (int i = 0; i < max; i++) s.Append(i < count ? '\u2605' : '\u2606');
-            return s.ToString();
+            get
+            {
+                if (star != null) return star;
+                const int size = 128;
+                var pts = new Vector2[10];
+                for (int i = 0; i < 10; i++)
+                {
+                    float a = Mathf.PI / 2f + i * Mathf.PI / 5f;
+                    float r = (i % 2 == 0 ? 0.48f : 0.2f) * size;
+                    pts[i] = new Vector2(size * 0.5f + Mathf.Cos(a) * r, size * 0.52f + Mathf.Sin(a) * r);
+                }
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    int inside = 0;
+                    for (int sy = 0; sy < 4; sy++)
+                    for (int sx = 0; sx < 4; sx++)
+                        if (InPolygon(new Vector2(x + (sx + 0.5f) / 4f, y + (sy + 0.5f) / 4f), pts)) inside++;
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, inside / 16f));
+                }
+                tex.Apply();
+                star = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+                return star;
+            }
+        }
+
+        static bool InPolygon(Vector2 p, Vector2[] poly)
+        {
+            bool inside = false;
+            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+                if ((poly[i].y > p.y) != (poly[j].y > p.y) &&
+                    p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+                    inside = !inside;
+            return inside;
+        }
+
+        /// <summary>A row of gold (earned) and dim (missing) star icons.</summary>
+        public static void StarRow(Transform parent, int count, int max, Vector2 center, float size)
+        {
+            for (int i = 0; i < max; i++)
+            {
+                var img = new GameObject("Star", typeof(RectTransform)).AddComponent<Image>();
+                img.transform.SetParent(parent, false);
+                img.sprite = Star;
+                img.raycastTarget = false;
+                img.color = i < count ? Gold : new Color(1f, 1f, 1f, 0.22f);
+                img.rectTransform.anchoredPosition = center + new Vector2((i - (max - 1) * 0.5f) * size * 1.15f, 0f);
+                img.rectTransform.sizeDelta = new Vector2(size, size);
+            }
         }
     }
 }

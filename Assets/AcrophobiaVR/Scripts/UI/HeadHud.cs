@@ -13,12 +13,12 @@ namespace AcrophobiaVR
         static HeadHud instance;
 
         Canvas canvas;
-        Text toast;
+        TMPro.TMP_Text toast;
         CanvasGroup toastGroup;
         Image ring;
         Image ringBack;
-        Text ringLabel;
-        Text subtitle;
+        TMPro.TMP_Text ringLabel;
+        TMPro.TMP_Text subtitle;
         CanvasGroup subtitleGroup;
         Coroutine toastRoutine;
         Coroutine subtitleRoutine;
@@ -99,11 +99,11 @@ namespace AcrophobiaVR
         {
             if (subtitleRoutine != null) StopCoroutine(subtitleRoutine);
             string text = string.IsNullOrEmpty(speaker) ? line : "<b><color=#8FE3B0>" + speaker + ":</color></b> " + line;
-            subtitle.supportRichText = true;
+            subtitle.richText = true;
             subtitleRoutine = StartCoroutine(ShowFor(subtitleGroup, subtitle, text, seconds));
         }
 
-        IEnumerator ShowFor(CanvasGroup group, Text label, string message, float seconds)
+        IEnumerator ShowFor(CanvasGroup group, TMPro.TMP_Text label, string message, float seconds)
         {
             label.text = message;
             for (float t = 0; t < 0.25f; t += Time.unscaledDeltaTime)

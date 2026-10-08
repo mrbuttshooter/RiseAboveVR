@@ -194,7 +194,6 @@ namespace AcrophobiaVR.EditorTools
                 Tree(env, new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r), 1f + (float)rng.NextDouble(), trunk, leaves);
             }
             Props.StreetDetails(env, new Vector3(0f, 0.02f, -2f), new Vector3(0f, 0.02f, 13f), 2.4f, 21);
-            Props.StreetDetails(env, new Vector3(-8f, 0.02f, 9f), new Vector3(8f, 0.02f, 9f), 2.4f, 22);
             // Fountain behind the player
             Cyl("FountainBasin", env, new Vector3(0, 0, -6), 2.2f, 0.5f, stone);
             Cyl("FountainWater", env, new Vector3(0, 0.45f, -6), 2f, 0.06f, Mat("Pond", new Color(0.35f, 0.65f, 0.85f), 0.95f), false);

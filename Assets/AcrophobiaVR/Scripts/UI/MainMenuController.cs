@@ -19,7 +19,7 @@ namespace AcrophobiaVR
         static readonly Color Dim = new Color(1f, 1f, 1f, 0.85f);
 
         readonly Button[] modeButtons = new Button[3];
-        Text modeText;
+        TMPro.TMP_Text modeText;
 
         void Start()
         {
@@ -78,8 +78,7 @@ namespace AcrophobiaVR
             UIFactory.Label(t, names[i], 50, new Vector2(0, 145), new Vector2(510, 70), TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
             UIFactory.Label(t, heights[i] + " high", 44, new Vector2(0, 80), new Vector2(500, 60), TextAnchor.MiddleCenter, UIFactory.Warn, FontStyle.Bold);
             UIFactory.Label(t, GameManager.LevelDescriptions[i], 32, new Vector2(0, 0), new Vector2(480, 100), TextAnchor.MiddleCenter, Dim);
-            var stars = UIFactory.Label(t, "<color=#FFD84D>" + UIFactory.Stars(ProgressStore.GetStars(i)) + "</color>", 64, new Vector2(0, -85), new Vector2(500, 80));
-            stars.supportRichText = true;
+            UIFactory.StarRow(t, ProgressStore.GetStars(i), 3, new Vector2(0, -85), 58f);
             float best = ProgressStore.GetBestTime(i);
             UIFactory.Label(t, best > 0 ? "Best " + LevelController.FormatTime(best) : " ", 30, new Vector2(0, -140), new Vector2(500, 44), TextAnchor.MiddleCenter, Dim);
             var b = UIFactory.Button(t, unlocked ? "PLAY" : "LOCKED", new Vector2(0, -205), new Vector2(320, 90),
@@ -134,7 +133,7 @@ namespace AcrophobiaVR
                 "C - crouch,  Space - climb\n\n" +
                 "<b><color=#FFD84D>Stars:</color></b> finish + no slips + all courage stars",
                 38, new Vector2(0, -50), new Vector2(920, 820), TextAnchor.UpperLeft);
-            body.supportRichText = true;
+            body.richText = true;
         }
 
         void OnDestroy() => MenuOpen = false;

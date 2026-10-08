@@ -44,7 +44,7 @@ namespace AcrophobiaVR
             UIFactory.Panel(canvas.transform, UIFactory.Accent, new Vector2(0, 372), new Vector2(1060, 8));
             UIFactory.Label(canvas.transform, title, 58, new Vector2(0, 290), new Vector2(1020, 90), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
             var bodyText = UIFactory.Label(canvas.transform, body, 36, new Vector2(0, 60), new Vector2(980, 360), TextAnchor.MiddleCenter);
-            bodyText.supportRichText = true;
+            bodyText.richText = true;
             Content = (RectTransform)canvas.transform;
 
             int n = choices.Length;

@@ -31,7 +31,7 @@ namespace AcrophobiaVR
         float verticalVelocity;
         float currentHeight;
         bool active;
-        Text crosshairHint;
+        TMPro.TMP_Text crosshairHint;
         Image crosshair;
         bool cursorFree;
         bool manualFree;

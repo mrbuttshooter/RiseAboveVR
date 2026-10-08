@@ -17,6 +17,7 @@ namespace AcrophobiaVR
         XRGrabInteractable grab;
         Rigidbody body;
         bool desktopHeld;
+        float nextPourPulse;
 
         public bool IsPouring { get; private set; }
 
@@ -68,6 +69,13 @@ namespace AcrophobiaVR
                     var pot = hit.collider.GetComponentInParent<FlowerPot>();
                     if (pot != null) pot.Water(Time.deltaTime);
                 }
+            }
+
+            // Gentle buzz in the hands while pouring (the holding hand is unknown, so both).
+            if (IsPouring && Time.time >= nextPourPulse)
+            {
+                nextPourPulse = Time.time + 0.1f;
+                Haptics.Pulse(0.12f, 0.05f);
             }
         }
     }

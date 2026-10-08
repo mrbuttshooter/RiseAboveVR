@@ -44,7 +44,8 @@ namespace AcrophobiaVR
         {
             triggered = true;
             float d = ExposureSettings.Mode == ExposureMode.Gentle ? delay * 1.8f : (ExposureSettings.Mode == ExposureMode.Brave ? delay * 0.75f : delay);
-            ProceduralAudio.PlayCrack();
+            ProceduralAudio.PlayCrackAt(transform.position);
+            Haptics.Light();
             for (float t = 0; t < d; t += Time.deltaTime)
             {
                 transform.position = homePos + Random.insideUnitSphere * 0.015f * (t / d + 0.3f);
@@ -53,6 +54,7 @@ namespace AcrophobiaVR
             bool playerWasOn = PlayerOnTop();
             col.enabled = false;
             ProceduralAudio.PlayWhoosh(0.4f);
+            ProceduralAudio.PlayCreakAt(transform.position, 0.8f);
             Vector3 vel = Vector3.zero;
             Vector3 spin = Random.onUnitSphere * 120f;
             for (float t = 0; t < 2f; t += Time.deltaTime)

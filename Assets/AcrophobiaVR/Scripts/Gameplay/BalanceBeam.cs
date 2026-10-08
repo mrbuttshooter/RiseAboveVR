@@ -34,6 +34,9 @@ namespace AcrophobiaVR
         bool warned;
         ParticleSystem gustParticles;
         bool playerOn;
+        float nextCreak;
+        float nextSoftCreak;
+        float nextMeterPulse;
 
         public static void ResetAll()
         {
@@ -98,6 +101,7 @@ namespace AcrophobiaVR
                 {
                     gustStart = Time.time;
                     ProceduralAudio.PlayWhoosh(1f);
+                    if (playerOn) Haptics.Pulse(0.6f, 0.4f);
                     if (gustParticles != null) gustParticles.Play();
                     ScheduleGust();
                     warned = false;
@@ -121,6 +125,24 @@ namespace AcrophobiaVR
                 if (meter > 0.05f)
                     HeadHud.Instance.ShowProgress(meter, gustNow && !lc.IsCrouching ? "Crouch! Hold on!" : "Balance - step back to the centre",
                         Color.Lerp(UIFactory.Warn, new Color(1f, 0.3f, 0.3f), meter));
+
+                // The beam creaks under the player: louder and deeper the more they wobble.
+                Vector3 underFoot = new Vector3(closest.x, Mathf.Min(closest.y, head.y), closest.z);
+                if (meter > 0.15f && Time.time >= nextCreak)
+                {
+                    nextCreak = Time.time + Random.Range(0.5f, 1.4f);
+                    ProceduralAudio.PlayCreakAt(underFoot, meter);
+                }
+                if (Time.time >= nextSoftCreak)
+                {
+                    nextSoftCreak = Time.time + Random.Range(3f, 6f);
+                    ProceduralAudio.PlayCreakAt(underFoot, 0.15f);
+                }
+                if (meter > 0.6f && Time.time >= nextMeterPulse)
+                {
+                    nextMeterPulse = Time.time + 0.4f;
+                    Haptics.Light();
+                }
 
                 if (meter >= 1f)
                 {

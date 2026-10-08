@@ -53,7 +53,8 @@ namespace AcrophobiaVR
             {
                 stepCooldown = Time.time + 2f;
                 rig.TeleportTo(topExit);
-                ProceduralAudio.PlayClunk();
+                ProceduralAudio.PlayClunkAt(topExit.position);
+                Haptics.Medium();
             }
         }
     }

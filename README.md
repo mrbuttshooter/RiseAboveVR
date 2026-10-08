@@ -47,6 +47,21 @@ brushed metal, grating, gravel - all with normal maps) tiled at real-world scale
 props (cars with wheels and lights, layered trees, street lamps, benches, people, rooftop machinery). On Quest the heavy
 post-processing and probes switch off automatically (`PlatformGraphics`).
 
+## Sound & feel
+
+All audio is synthesised in code (no audio files) and placed in 3D space:
+
+- **World sounds**: a busker playing guitar, splashing fountains, cafe chatter, passing cars (engine + Doppler), lift and crane
+  motors that run only while moving, bird flocks chirping below you - attached automatically to the right objects (`SceneAudioDresser`).
+- **Footsteps** that match the surface (concrete, wood, metal grating, glass, grass) and **creaking planks / beams / rope bridge**
+  that groan louder the more you wobble - high up, even a steady plank occasionally creaks.
+- **Positional one-shots**: glass cracks and shatters under your feet, the lift clunks, Pip chirps from where Pip flies, the cat meows
+  from the cat, fireworks boom from the sky.
+- **Wind** grows with height and surges with gusts; the **heartbeat** follows your BPM; the **breathing guide** breathes with you.
+- **Haptics** (controller rumble): heartbeat at high fear, grabbing items, pressing buttons, glass cracking/shattering, wind gusts,
+  wobbling on a beam, lift jolts, slips, courage stars, pouring water.
+- **Master volume** control on the main menu (saved between sessions).
+
 ## The levels
 
 **Park hub (main menu)** - level portals, exposure-mode picker, trophy wall with before/after anxiety bars, help board.

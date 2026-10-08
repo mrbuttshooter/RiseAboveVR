@@ -49,6 +49,7 @@ namespace AcrophobiaVR
             Transform snap = snapPoint != null ? snapPoint : target.transform;
             item.SetPositionAndRotation(snap.position, snap.rotation);
             Effects.Sparkle(item.position, UIFactory.Gold);
+            Haptics.Medium();
             Complete();
         }
     }

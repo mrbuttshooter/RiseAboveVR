@@ -47,6 +47,7 @@ namespace AcrophobiaVR
             Collected++;
             SessionLogger.Log(SceneManager.GetActiveScene().name, "courage_star", Collected + "/" + Total);
             ProceduralAudio.PlaySuccess();
+            Haptics.Light();
             Effects.Sparkle(transform.position, UIFactory.Gold);
             HeadHud.Instance.ShowMessage("Courage star! " + Collected + "/" + Total, 2.5f);
             if (Collected == Total) Companion.Say("Every courage star! You went to the scariest spots on purpose. That is real bravery.");

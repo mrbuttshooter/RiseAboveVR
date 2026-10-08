@@ -53,7 +53,8 @@ namespace AcrophobiaVR
         {
             if (string.IsNullOrEmpty(line)) return;
             HeadHud.Instance.ShowSubtitle("Pip", line, seconds);
-            ProceduralAudio.PlayChirp();
+            if (Instance != null) ProceduralAudio.PlayChirpAt(Instance.transform.position);
+            else ProceduralAudio.PlayChirp();
             if (Instance != null) Instance.Pulse();
         }
 

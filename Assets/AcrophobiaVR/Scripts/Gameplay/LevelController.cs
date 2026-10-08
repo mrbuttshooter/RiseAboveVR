@@ -227,6 +227,7 @@ namespace AcrophobiaVR
             Slips++;
             SessionLogger.Log(SceneName, "slip", reason);
             ProceduralAudio.PlayWhoosh(0.6f);
+            Haptics.Strong();
             yield return ScreenFader.Instance.FadeOut(0.25f);
             CheckpointSystem.RespawnPlayer();
             BalanceBeam.ResetAll();

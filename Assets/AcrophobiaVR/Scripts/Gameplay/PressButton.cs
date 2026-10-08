@@ -26,7 +26,8 @@ namespace AcrophobiaVR
         {
             if (pressed) return;
             pressed = true;
-            ProceduralAudio.PlayClunk();
+            Haptics.Medium();
+            ProceduralAudio.PlayClunkAt(transform.position);
             if (cap != null) cap.localPosition += Vector3.down * 0.03f;
             onPressed.Invoke();
         }

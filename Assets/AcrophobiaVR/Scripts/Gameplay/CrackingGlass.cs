@@ -52,7 +52,8 @@ namespace AcrophobiaVR
             if (stage > lastStage)
             {
                 lastStage = stage;
-                ProceduralAudio.PlayCrack();
+                ProceduralAudio.PlayCrackAt(transform.position);
+                Haptics.Light();
                 if (stage == 1) HeadHud.Instance.ShowMessage("The glass is cracking - keep moving!", 2.5f);
             }
             SetCracks(damage);
@@ -70,7 +71,8 @@ namespace AcrophobiaVR
         IEnumerator Shatter()
         {
             broken = true;
-            ProceduralAudio.PlayShatter();
+            ProceduralAudio.PlayShatterAt(transform.position);
+            Haptics.Strong();
             Effects.Shards(transform.position, transform.lossyScale);
             if (rend != null) rend.enabled = false;
             col.enabled = false;

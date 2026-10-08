@@ -44,7 +44,8 @@ namespace AcrophobiaVR
                 return;
             }
             taken = true;
-            if (isCat) ProceduralAudio.PlayMeow(); else ProceduralAudio.PlayChime(1.4f);
+            Haptics.Medium();
+            if (isCat) ProceduralAudio.PlayMeowAt(transform.position); else ProceduralAudio.PlayChime(1.4f);
             if (Owner != null) Owner.NotifyCollected(this);
             StartCoroutine(Vanish());
         }

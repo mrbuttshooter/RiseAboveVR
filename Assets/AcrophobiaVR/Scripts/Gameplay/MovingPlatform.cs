@@ -64,7 +64,8 @@ namespace AcrophobiaVR
             AnyRiding = true;
             var rig = PlayerRig.Instance;
             rig.SetLocomotionEnabled(false);
-            ProceduralAudio.PlayClunk();
+            ProceduralAudio.PlayClunkAt(transform.position);
+            Haptics.Medium();
             if (!string.IsNullOrEmpty(startLine)) Companion.Say(startLine, 5f);
             AmbientAudio.Machinery = 1f;
 
@@ -94,7 +95,8 @@ namespace AcrophobiaVR
                 if (i == stallAtWaypoint)
                 {
                     AmbientAudio.Machinery = 0f;
-                    ProceduralAudio.PlayClunk();
+                    ProceduralAudio.PlayClunkAt(transform.position);
+                    Haptics.Medium();
                     Companion.Say(stallLine, stallSeconds);
                     SessionLogger.Log(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, "lift_stall");
                     float s = ExposureSettings.Mode == ExposureMode.Gentle ? stallSeconds * 0.5f : stallSeconds;
@@ -105,14 +107,16 @@ namespace AcrophobiaVR
                         yield return null;
                     }
                     if (swingVisual != null) swingVisual.localPosition = Vector3.zero;
-                    ProceduralAudio.PlayClunk();
+                    ProceduralAudio.PlayClunkAt(transform.position);
+                    Haptics.Medium();
                     Companion.Say("And we're moving again. Well done for staying calm!", 3.5f);
                     AmbientAudio.Machinery = 1f;
                 }
             }
 
             AmbientAudio.Machinery = 0f;
-            ProceduralAudio.PlayClunk();
+            ProceduralAudio.PlayClunkAt(transform.position);
+            Haptics.Medium();
             rig.SetLocomotionEnabled(true);
             moving = false;
             AnyRiding = false;

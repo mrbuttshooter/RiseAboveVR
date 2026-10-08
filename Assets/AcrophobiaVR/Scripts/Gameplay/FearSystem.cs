@@ -359,11 +359,7 @@ namespace AcrophobiaVR
 
         static void Haptic(float amplitude, float duration)
         {
-            foreach (var node in new[] { XRNode.LeftHand, XRNode.RightHand })
-            {
-                var device = InputDevices.GetDeviceAtXRNode(node);
-                if (device.isValid) device.SendHapticImpulse(0u, amplitude, duration);
-            }
+            Haptics.Pulse(amplitude, duration);
         }
 
         void ApplyEffects(PlayerRig rig, Transform head)

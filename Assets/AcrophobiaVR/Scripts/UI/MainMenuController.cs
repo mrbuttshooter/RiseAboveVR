@@ -20,6 +20,7 @@ namespace AcrophobiaVR
 
         readonly Button[] modeButtons = new Button[3];
         TMPro.TMP_Text modeText;
+        TMPro.TMP_Text volumeText;
 
         void Start()
         {
@@ -64,6 +65,17 @@ namespace AcrophobiaVR
 
             UIFactory.Button(root, "Reset", new Vector2(520, -300), new Vector2(220, 92), new Color(0.5f, 0.22f, 0.22f), ConfirmReset, 40);
             UIFactory.Button(root, "Quit", new Vector2(740, -300), new Vector2(180, 92), new Color(0.32f, 0.32f, 0.38f), () => GameManager.Instance.Quit(), 40);
+
+            // Master volume (right side of the mode-description row; that text ends at x = 400).
+            // 34 pt bold "Volume" is ~137 px wide; NoWrap so TMP never splits the word inside the 140 px box.
+            var volumeLabel = UIFactory.Label(root, "Volume", 34, new Vector2(475, -395), new Vector2(140, 70), TextAnchor.MiddleLeft, UIFactory.Accent, FontStyle.Bold);
+            volumeLabel.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            UIFactory.Button(root, "-", new Vector2(582, -395), new Vector2(70, 70), UIFactory.ButtonColor, () => ChangeVolume(-0.1f), 44);
+            volumeText = UIFactory.Label(root, "", 36, new Vector2(667, -395), new Vector2(100, 70), TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
+            volumeText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            UIFactory.Button(root, "+", new Vector2(752, -395), new Vector2(70, 70), UIFactory.ButtonColor, () => ChangeVolume(0.1f), 44);
+            RefreshVolume();
+
             UIFactory.Label(root, "Feeling too much? Press X (or Esc) anytime for the Calm Meadow.", 34, new Vector2(0, -490), new Vector2(1650, 56), TextAnchor.MiddleCenter, UIFactory.Calm);
         }
 
@@ -99,6 +111,21 @@ namespace AcrophobiaVR
             for (int m = 0; m < 3; m++)
                 modeButtons[m].GetComponent<Image>().color = m == (int)mode ? UIFactory.Calm * 0.85f : UIFactory.ButtonColor;
             modeText.text = ExposureSettings.Describe(mode);
+        }
+
+        // UIFactory.Button already plays ProceduralAudio.PlayClick on press, so no extra click here.
+        void ChangeVolume(float delta)
+        {
+            // Round to whole tenths so repeated presses land exactly on 0%, 10% ... 100%.
+            float v = Mathf.Round((AudioSettingsStore.MasterVolume + delta) * 10f) / 10f;
+            AudioSettingsStore.MasterVolume = Mathf.Clamp01(v);
+            RefreshVolume();
+        }
+
+        void RefreshVolume()
+        {
+            if (volumeText != null)
+                volumeText.text = Mathf.RoundToInt(AudioSettingsStore.MasterVolume * 100f) + "%";
         }
 
         void ConfirmReset()

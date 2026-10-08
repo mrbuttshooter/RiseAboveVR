@@ -66,13 +66,26 @@ namespace AcrophobiaVR
             int done = 0;
             while (loopForever || done < cycles)
             {
+                Breath(true, Inhale);
                 yield return Phase("Breathe in", Inhale, 0.55f, 1f);
                 yield return Phase("Hold", Hold, 1f, 1f);
+                Breath(false, Exhale);
                 yield return Phase("Breathe out", Exhale, 1f, 0.55f);
                 done++;
                 if (!loopForever) count.text = done + " / " + cycles;
             }
             Finish();
+        }
+
+        /// <summary>
+        /// Audible breath cue. A guide opened on demand always breathes; the permanent meadow orb only
+        /// breathes while the player is actually in the Calm Meadow and no on-demand guide is playing
+        /// (so two breath sounds never overlap).
+        /// </summary>
+        void Breath(bool inhale, float seconds)
+        {
+            bool audible = !loopForever || (SafeRoom.InSafeRoom && !Active);
+            if (audible) ProceduralAudio.PlayBreath(inhale, seconds);
         }
 
         IEnumerator Phase(string label, float seconds, float from, float to)

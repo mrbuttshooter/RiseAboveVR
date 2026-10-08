@@ -176,7 +176,7 @@ namespace AcrophobiaVR
             trails.widthOverTrail = 0.4f;
             ps.GetComponent<ParticleSystemRenderer>().trailMaterial = ParticleMaterial;
             ps.Play();
-            ProceduralAudio.PlayBoom();
+            ProceduralAudio.PlayBoomAt(pos);
         }
 
         static ParticleSystem.MinMaxGradient Fade(Color c)

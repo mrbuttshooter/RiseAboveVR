@@ -1,0 +1,183 @@
+using System.Collections;
+using Unity.XR.CoreUtils;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+using UnityEngine.XR;
+
+namespace AcrophobiaVR
+{
+    /// <summary>
+    /// Keyboard + mouse fallback when no headset is connected, so the whole game can be played and
+    /// demonstrated on a normal PC. WASD move, mouse look, Shift walk slowly, C crouch,
+    /// left click use/grab, right click pour, Space climb, Esc Calm Meadow, Tab free the cursor.
+    /// </summary>
+    [RequireComponent(typeof(XROrigin))]
+    public class DesktopRig : MonoBehaviour
+    {
+        public static bool ClimbingThisFrame;
+
+        public float walkSpeed = 2.2f;
+        public float mouseSensitivity = 0.12f;
+        public float standingHeight = 1.65f;
+        public float crouchHeight = 1.05f;
+        public float interactRange = 3.5f;
+
+        XROrigin origin;
+        Transform cam;
+        CharacterController cc;
+        float pitch;
+        float yaw;
+        float verticalVelocity;
+        float currentHeight;
+        bool active;
+        Text crosshairHint;
+        Image crosshair;
+        bool cursorFree;
+        bool manualFree;
+
+        IEnumerator Start()
+        {
+            origin = GetComponent<XROrigin>();
+            // Give the XR runtime a moment to start before deciding.
+            yield return new WaitForSeconds(0.75f);
+            if (XRSettings.isDeviceActive && !ForceDesktop()) yield break;
+            Activate();
+        }
+
+        static bool ForceDesktop()
+        {
+            foreach (var a in System.Environment.GetCommandLineArgs())
+                if (a == "-desktop") return true;
+            return false;
+        }
+
+        void Activate()
+        {
+            active = true;
+            if (PlayerRig.Instance != null) PlayerRig.Instance.IsDesktop = true;
+            cam = origin.Camera.transform;
+
+            // Stop the XR tracked pose driver and VR locomotion from fighting the mouse/keyboard.
+            foreach (var tpd in cam.GetComponents<UnityEngine.InputSystem.XR.TrackedPoseDriver>()) tpd.enabled = false;
+            foreach (var p in GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.LocomotionProvider>(true)) p.enabled = false;
+            foreach (var t in GetComponentsInChildren<Transform>(true))
+            {
+                string n = t.name.ToLowerInvariant();
+                if (n.Contains("left controller") || n.Contains("right controller")) t.gameObject.SetActive(false);
+            }
+
+            cc = GetComponent<CharacterController>();
+            if (cc == null) cc = gameObject.AddComponent<CharacterController>();
+            cc.enabled = true;
+            cc.radius = 0.25f;
+            cc.stepOffset = 0.3f;
+            cc.skinWidth = 0.02f;
+
+            if (origin.CameraFloorOffsetObject != null) origin.CameraFloorOffsetObject.transform.localPosition = Vector3.zero;
+            currentHeight = standingHeight;
+            cam.localPosition = new Vector3(0f, currentHeight, 0f);
+            cam.localRotation = Quaternion.identity;
+            yaw = transform.eulerAngles.y;
+            BuildCrosshair();
+            SetCursorFree(false);
+            HeadHud.Instance.ShowMessage("Desktop mode: WASD move, mouse look, click to use, C crouch, Space climb, Esc Calm Meadow", 7f);
+        }
+
+        void BuildCrosshair()
+        {
+            var go = new GameObject("DesktopCrosshair", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            var canvas = go.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
+            crosshair = UIFactory.CircleImage(go.transform, new Color(1, 1, 1, 0.8f), Vector2.zero, 10);
+            crosshair.rectTransform.anchorMin = crosshair.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            crosshairHint = UIFactory.Label(go.transform, "", 22, new Vector2(0, -40), new Vector2(700, 40));
+            crosshairHint.rectTransform.anchorMin = crosshairHint.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        }
+
+        void SetCursorFree(bool free)
+        {
+            cursorFree = free;
+            Cursor.lockState = free ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = free;
+        }
+
+        void Update()
+        {
+            if (!active) return;
+            var kb = Keyboard.current;
+            var mouse = Mouse.current;
+            if (kb == null || mouse == null) return;
+
+            // Free the mouse whenever a menu/rating panel is open so it can be clicked.
+            bool uiOpen = Dialog.AnyOpen || FindFirstObjectByType<RatingPanel>() != null || (BreathingGuide.Active && !SafeRoom.InSafeRoom) || SafeRoom.InSafeRoom || MainMenuController.MenuOpen;
+            if (kb.tabKey.wasPressedThisFrame) manualFree = !manualFree;
+            bool wantFree = uiOpen || manualFree;
+            if (wantFree != cursorFree) SetCursorFree(wantFree);
+            if (crosshair != null) crosshair.enabled = !cursorFree;
+
+            // Locked cursor: mouse look. Free cursor (menus): hold the right mouse button to look around.
+            if (!cursorFree || mouse.rightButton.isPressed)
+            {
+                Vector2 d = mouse.delta.ReadValue() * mouseSensitivity;
+                yaw += d.x;
+                pitch = Mathf.Clamp(pitch - d.y, -85f, 85f);
+            }
+
+            bool frozen = cc == null || !cc.enabled; // e.g. riding the lift
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            cam.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+
+            float targetHeight = kb.cKey.isPressed || kb.leftCtrlKey.isPressed ? crouchHeight : standingHeight;
+            currentHeight = Mathf.MoveTowards(currentHeight, targetHeight, Time.deltaTime * 3f);
+            cam.localPosition = new Vector3(0f, currentHeight, 0f);
+
+            if (!frozen)
+            {
+                cc.height = Mathf.Max(0.6f, currentHeight + 0.1f);
+                cc.center = new Vector3(0f, cc.height * 0.5f, 0f);
+                Vector2 input = Vector2.zero;
+                if (kb.wKey.isPressed) input.y += 1;
+                if (kb.sKey.isPressed) input.y -= 1;
+                if (kb.dKey.isPressed) input.x += 1;
+                if (kb.aKey.isPressed) input.x -= 1;
+                float speed = kb.leftShiftKey.isPressed ? walkSpeed * 0.45f : walkSpeed;
+                if (targetHeight < standingHeight) speed *= 0.5f;
+                Vector3 move = (transform.forward * input.y + transform.right * input.x).normalized * speed;
+
+                if (ClimbingThisFrame) verticalVelocity = 0f;
+                else if (cc.isGrounded) verticalVelocity = -1f;
+                else verticalVelocity += Physics.gravity.y * Time.deltaTime;
+                if (!ClimbingThisFrame) move.y = verticalVelocity;
+                cc.Move(move * Time.deltaTime);
+            }
+            ClimbingThisFrame = false;
+
+            HandleInteraction(mouse);
+        }
+
+        void HandleInteraction(Mouse mouse)
+        {
+            if (cursorFree || crosshairHint == null) return;
+            crosshairHint.text = "";
+            if (!Physics.Raycast(cam.position, cam.forward, out RaycastHit hit, interactRange, ~0, QueryTriggerInteraction.Ignore)) return;
+            var usable = hit.collider.GetComponentInParent<IDesktopUsable>();
+            if (usable == null) return;
+            crosshairHint.text = usable.DesktopHint;
+            if (mouse.leftButton.wasPressedThisFrame) usable.DesktopUse();
+        }
+
+        void LateUpdate()
+        {
+            // Held items that are being carried may block the ray; let a click still reach them.
+            if (!active || cursorFree) return;
+            var mouse = Mouse.current;
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+            foreach (var d in FindObjectsByType<DeliverableItem>(FindObjectsSortMode.None))
+                if (d.enabled && Vector3.Distance(d.transform.position, cam.position) < 1.2f && d.owner != null && d.owner.PlayerNearTarget())
+                    d.DesktopUse();
+        }
+    }
+}

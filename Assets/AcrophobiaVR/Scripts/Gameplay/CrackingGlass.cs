@@ -10,7 +10,7 @@ namespace AcrophobiaVR
     [RequireComponent(typeof(BoxCollider))]
     public class CrackingGlass : MonoBehaviour
     {
-        public float secondsToBreak = 5f;
+        public float secondsToBreak = 10f;
         public LineRenderer[] cracks;
         public Renderer panel;
 

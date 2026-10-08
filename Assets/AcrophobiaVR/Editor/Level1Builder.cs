@@ -9,7 +9,7 @@ namespace AcrophobiaVR.EditorTools
         static void BuildLevel1()
         {
             var scene = NewScene();
-            Atmosphere(Sky("SkySunset", new Color(0.95f, 0.55f, 0.35f), new Color(0.35f, 0.3f, 0.3f), 0.06f, 1.6f, 1.3f),
+            Atmosphere(Sky("SkySunset", new Color(0.85f, 0.6f, 0.52f), new Color(0.35f, 0.3f, 0.3f), 0.06f, 1.2f, 1.35f),
                 new Color(0.95f, 0.72f, 0.55f), new Color(0.85f, 0.65f, 0.55f));
             Sun(new Vector3(12, -35, 0), new Color(1f, 0.72f, 0.48f), 1.3f);
 
@@ -107,7 +107,7 @@ namespace AcrophobiaVR.EditorTools
             var crack = glassRoot.AddComponent<CrackingGlass>();
             crack.panel = glassVisual.GetComponent<Renderer>();
             crack.cracks = Cracks(glassRoot.transform, 8, new Vector2(1f, 2f), 0.056f, 7);
-            crack.secondsToBreak = 6f;
+            crack.secondsToBreak = 10f;
             Bar("FrameL", sky, new Vector3(-6f, B - 0.1f, -3f), new Vector3(-6f, B - 0.1f, -7f), 0.1f, metal);
             Bar("FrameR", sky, new Vector3(-4f, B - 0.1f, -3f), new Vector3(-4f, B - 0.1f, -7f), 0.1f, metal);
             Bar("Strut", sky, new Vector3(-5f, B - 0.1f, -7f), new Vector3(-5f, B - 2.5f, -3.1f), 0.12f, metal);

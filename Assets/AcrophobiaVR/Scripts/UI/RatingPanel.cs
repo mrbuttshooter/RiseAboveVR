@@ -58,7 +58,8 @@ namespace AcrophobiaVR
             if (kb == null) return;
             for (int i = 0; i <= 9; i++)
             {
-                var key = kb[(Key)((int)Key.Digit0 + i)];
+                // Input System orders Digit1..Digit9 then Digit0, so map explicitly.
+                var key = kb[i == 0 ? Key.Digit0 : (Key)((int)Key.Digit1 + i - 1)];
                 if (key != null && key.wasPressedThisFrame)
                 {
                     Choose(i);

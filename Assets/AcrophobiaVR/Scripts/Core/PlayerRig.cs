@@ -94,7 +94,8 @@ namespace AcrophobiaVR
         /// <summary>Disables walking, teleporting, turning and gravity (e.g. while the lift is moving).</summary>
         public void SetLocomotionEnabled(bool enabled)
         {
-            if (providers != null)
+            // In desktop mode the XR locomotion stays off; DesktopRig moves the player itself.
+            if (providers != null && !IsDesktop)
                 foreach (var p in providers)
                     if (p != null) p.enabled = enabled;
             if (characterController != null) characterController.enabled = enabled;

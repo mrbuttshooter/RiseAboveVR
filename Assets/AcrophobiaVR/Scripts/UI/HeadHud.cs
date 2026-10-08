@@ -38,7 +38,7 @@ namespace AcrophobiaVR
             instance = this;
             canvas = UIFactory.CreateWorldCanvas("HudCanvas", new Vector2(1000, 700), 0.0011f, transform);
             canvas.sortingOrder = 50;
-            foreach (var r in canvas.GetComponents<GraphicRaycaster>()) r.enabled = false;
+            foreach (var r in canvas.GetComponents<UnityEngine.EventSystems.BaseRaycaster>()) r.enabled = false;
             var root = canvas.transform;
 
             var toastBg = UIFactory.Panel(root, new Color(0.05f, 0.08f, 0.12f, 0.85f), new Vector2(0, 230), new Vector2(820, 110));

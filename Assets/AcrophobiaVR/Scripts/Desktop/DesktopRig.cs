@@ -35,6 +35,7 @@ namespace AcrophobiaVR
         Image crosshair;
         bool cursorFree;
         bool manualFree;
+        bool wasUiOpen;
 
         IEnumerator Start()
         {
@@ -56,6 +57,12 @@ namespace AcrophobiaVR
         {
             active = true;
             if (PlayerRig.Instance != null) PlayerRig.Instance.IsDesktop = true;
+            UIFactory.DesktopMode = true;
+            foreach (var gr in FindObjectsByType<GraphicRaycaster>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                var tracked = gr.GetComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
+                if (tracked != null && tracked.enabled) gr.enabled = true;
+            }
             cam = origin.Camera.transform;
 
             // Stop the XR tracked pose driver and VR locomotion from fighting the mouse/keyboard.
@@ -114,6 +121,9 @@ namespace AcrophobiaVR
             // Free the mouse whenever a menu/rating panel is open so it can be clicked.
             bool uiOpen = Dialog.AnyOpen || FindFirstObjectByType<RatingPanel>() != null || (BreathingGuide.Active && !SafeRoom.InSafeRoom) || SafeRoom.InSafeRoom || MainMenuController.MenuOpen;
             if (kb.tabKey.wasPressedThisFrame) manualFree = !manualFree;
+            // A panel just appeared at eye level: level the view so the player actually sees it.
+            if (uiOpen && !wasUiOpen) pitch = 0f;
+            wasUiOpen = uiOpen;
             bool wantFree = uiOpen || manualFree;
             if (wantFree != cursorFree) SetCursorFree(wantFree);
             if (crosshair != null) crosshair.enabled = !cursorFree;

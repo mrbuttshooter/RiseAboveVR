@@ -14,6 +14,7 @@ namespace AcrophobiaVR
 
         public float radius = 0.55f;
         bool taken;
+        float reach;
         Vector3 basePos;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -31,12 +32,14 @@ namespace AcrophobiaVR
 
             var rig = PlayerRig.Instance;
             if (rig == null) return;
+            // Desktop players can't lean over a railing, so give them a longer reach.
+            reach = rig.IsDesktop ? radius * 1.8f : radius;
             if (Near(rig.Head.position) || Near(rig.LeftHand) || Near(rig.RightHand)) Take();
         }
 
         bool Near(Transform t) => t != null && Near(t.position);
 
-        bool Near(Vector3 p) => (p - transform.position).sqrMagnitude < radius * radius;
+        bool Near(Vector3 p) => (p - transform.position).sqrMagnitude < reach * reach;
 
         void Take()
         {

@@ -39,11 +39,13 @@ namespace AcrophobiaVR
         public Light glow;
 
         Vector3 velocity;
+        Vector3 bodyBaseScale = Vector3.one;
         float nextIdleLine;
 
         void Awake()
         {
             Instance = this;
+            if (body != null) bodyBaseScale = body.localScale;
             nextIdleLine = Time.time + 60f;
         }
 
@@ -82,7 +84,7 @@ namespace AcrophobiaVR
             if (rightWing != null) rightWing.localRotation = Quaternion.Euler(0f, 0f, -flap);
 
             pulse = Mathf.MoveTowards(pulse, 0f, Time.deltaTime * 1.5f);
-            if (body != null) body.localScale = Vector3.one * (1f + pulse * 0.25f);
+            if (body != null) body.localScale = bodyBaseScale * (1f + pulse * 0.25f);
             if (glow != null) glow.intensity = 1.2f + pulse * 2f;
 
             if (Time.time > nextIdleLine && LevelController.Instance != null && LevelController.Instance.Started && !SafeRoom.InSafeRoom)

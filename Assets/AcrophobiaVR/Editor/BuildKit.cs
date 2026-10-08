@@ -111,15 +111,33 @@ namespace AcrophobiaVR.EditorTools
             m.SetFloat("_ZWrite", 0f);
             m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             m.renderQueue = (int)RenderQueue.Transparent;
-            var tex = Resources.GetBuiltinResource<Texture2D>("Default-Particle.psd");
-            if (tex == null) tex = AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd");
-            if (tex != null) m.SetTexture("_BaseMap", tex);
+            m.SetTexture("_BaseMap", SoftDot());
             return Save(name, m);
+        }
+
+        /// <summary>Soft radial dot texture for particles (saved as an asset so builds include it).</summary>
+        static Texture2D SoftDot()
+        {
+            string path = MatDir + "/SoftDot.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (existing != null) return existing;
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "SoftDot" };
+            float r = size * 0.5f;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r)) / r;
+                float a = Mathf.Clamp01(1f - d);
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+            }
+            tex.Apply();
+            AssetDatabase.CreateAsset(tex, path);
+            return tex;
         }
 
         public static Material Sky(string name, Color tint, Color ground, float sunSize, float thickness, float exposure)
         {
-            if (Cache.TryGetValue(name, out var cached) && cached != null) return cached;
             var m = new Material(Shader.Find("Skybox/Procedural"));
             m.SetColor("_SkyTint", tint);
             m.SetColor("_GroundColor", ground);
@@ -338,7 +356,7 @@ namespace AcrophobiaVR.EditorTools
         static Transform WingPivot(Transform parent, int side)
         {
             var pivot = Point(side < 0 ? "WingL" : "WingR", parent, new Vector3(0.06f * side, 0.02f, 0f));
-            Prim(PrimitiveType.Cube, "Feather", pivot, new Vector3(0.09f * side, 0, -0.01f), new Vector3(0.16f, 0.012f, 0.09f), Glow("PipWing", new Color(0.7f, 0.95f, 1f), 0.8f), false, false);
+            Prim(PrimitiveType.Cube, "Feather", pivot, new Vector3(0.06f * side, 0, -0.01f), new Vector3(0.1f, 0.015f, 0.08f), Glow("PipWing", new Color(0.7f, 0.95f, 1f), 0.8f), false, false);
             return pivot;
         }
 

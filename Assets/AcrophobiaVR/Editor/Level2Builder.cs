@@ -214,7 +214,7 @@ namespace AcrophobiaVR.EditorTools
             {
                 Bar("Cable", rideVisual, new Vector3(x, 0, 0), new Vector3(0, 9f, 0), 0.03f, Mat("Cable", new Color(0.15f, 0.15f, 0.15f), 0.6f, 0.8f), false, false);
             }
-            Bar("HoldCable", rideVisual, new Vector3(0, 0, 0), new Vector3(0, 9f, 0), 0.04f, Mat("Cable", new Color(0.15f, 0.15f, 0.15f), 0.6f, 0.8f), false, false);
+            Bar("HoldCable", rideVisual, new Vector3(0.3f, 0, 0.42f), new Vector3(0, 9f, 0), 0.04f, Mat("Cable", new Color(0.15f, 0.15f, 0.15f), 0.6f, 0.8f), false, false);
             var rideMp = ride.AddComponent<MovingPlatform>();
             rideMp.swingVisual = rideVisual;
             rideMp.swingDegrees = 2.5f;

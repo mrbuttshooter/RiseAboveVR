@@ -20,7 +20,7 @@ namespace AcrophobiaVR
         public Transform wobbleVisual;
 
         [Header("Difficulty")]
-        public float driftFillRate = 0.9f;
+        public float driftFillRate = 0.6f;
         public float recoverRate = 0.6f;
         public bool gusts;
         public Vector2 gustInterval = new Vector2(9f, 15f);
@@ -108,7 +108,8 @@ namespace AcrophobiaVR
 
             if (active)
             {
-                float safe = walkableHalfWidth * (ExposureSettings.Mode == ExposureMode.Gentle ? 0.9f : 0.6f);
+                // Real heads sway ~10 cm even when standing still, so never make the safe band narrower than 15 cm.
+                float safe = Mathf.Max(0.15f, walkableHalfWidth * (ExposureSettings.Mode == ExposureMode.Gentle ? 0.9f : 0.6f));
                 float fill = 0f;
                 if (lateral > safe) fill += driftFillRate * ModeScale * Mathf.Clamp01((lateral - safe) / walkableHalfWidth + 0.3f);
                 if (gustNow && !lc.IsCrouching) fill += gustFillRate * ModeScale;

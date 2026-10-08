@@ -209,9 +209,9 @@ namespace AcrophobiaVR.EditorTools
 
             var menu = Group("MainMenu", systems).AddComponent<MainMenuController>();
             Vector3 eye = new Vector3(0, 1.6f, 0);
-            menu.menuPoint = PanelPoint("MenuPoint", systems, new Vector3(0, 1.75f, 3.4f), eye);
-            menu.trophyPoint = PanelPoint("TrophyPoint", systems, new Vector3(-3.6f, 1.7f, 2f), eye);
-            menu.helpPoint = PanelPoint("HelpPoint", systems, new Vector3(3.4f, 1.7f, 2f), eye);
+            menu.menuPoint = PanelPoint("MenuPoint", systems, new Vector3(0, 1.7f, 2.6f), eye);
+            menu.trophyPoint = PanelPoint("TrophyPoint", systems, new Vector3(-2.7f, 1.65f, 1.3f), eye);
+            menu.helpPoint = PanelPoint("HelpPoint", systems, new Vector3(2.7f, 1.65f, 1.3f), eye);
             var ff = Group("Fireflies", env);
             ff.transform.position = new Vector3(0, 1.5f, 4);
             ff.AddComponent<FirefliesSpawner>().radius = 10f;

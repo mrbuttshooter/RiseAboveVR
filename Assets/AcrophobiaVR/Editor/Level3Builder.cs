@@ -9,7 +9,7 @@ namespace AcrophobiaVR.EditorTools
         static void BuildLevel3()
         {
             var scene = NewScene();
-            Atmosphere(Sky("SkyGolden", new Color(1f, 0.6f, 0.4f), new Color(0.3f, 0.28f, 0.3f), 0.07f, 1.8f, 1.15f),
+            Atmosphere(Sky("SkyGolden", new Color(0.78f, 0.56f, 0.5f), new Color(0.3f, 0.28f, 0.3f), 0.07f, 1.15f, 1.35f),
                 new Color(0.95f, 0.7f, 0.55f), new Color(0.9f, 0.7f, 0.6f));
             Sun(new Vector3(6, -70, 0), new Color(1f, 0.68f, 0.42f), 1.25f);
 
@@ -225,9 +225,9 @@ namespace AcrophobiaVR.EditorTools
             press.button = btn;
 
             var show = Group("FireworksShow", game).AddComponent<FireworksShow>();
-            show.transform.position = new Vector3(40f, H - 10f, 70f);
-            show.area = 60f;
-            show.height = 50f;
+            show.transform.position = new Vector3(50f, H, 48f);
+            show.area = 40f;
+            show.height = 35f;
             UnityEditor.Events.UnityEventTools.AddPersistentListener(btn.onPressed, show.Play);
 
             // Birds and clouds below and around you

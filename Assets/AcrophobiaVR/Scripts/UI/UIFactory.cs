@@ -19,6 +19,10 @@ namespace AcrophobiaVR
         public static readonly Color ButtonColor = new Color(0.18f, 0.27f, 0.4f, 1f);
         public static readonly Color Gold = new Color(1f, 0.84f, 0.3f);
 
+        /// <summary>Set by DesktopRig. Mouse raycasting on world canvases is only enabled without a headset,
+        /// otherwise the plain GraphicRaycaster would also react to controller rays at bogus screen positions.</summary>
+        public static bool DesktopMode;
+
         static Font font;
         static Sprite circle;
         static Sprite rounded;
@@ -96,7 +100,7 @@ namespace AcrophobiaVR
             canvas.worldCamera = Camera.main;
             canvas.sortingOrder = 10;
             go.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 4f;
-            go.AddComponent<GraphicRaycaster>();
+            go.AddComponent<GraphicRaycaster>().enabled = DesktopMode;
             go.AddComponent<TrackedDeviceGraphicRaycaster>();
             var rt = (RectTransform)go.transform;
             rt.sizeDelta = sizePx;

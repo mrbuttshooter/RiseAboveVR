@@ -41,6 +41,17 @@ The **Fear System** simulates acrophobia from inside the player's head:
 
 ## Graphics
 
+**Real assets (CC0, Poly Haven)** - 4 photographic HDR skies (sunset, noon, golden hour, park) that also light the
+scenes, and 10 real PBR texture sets (asphalt, concrete, paving, grass, dirt, wood planks, metal plate, rusty grating,
+gravel, tiles) with normal and roughness maps. Downloaded only from polyhaven.com, every file verified against Poly
+Haven's published MD5 checksum. See `Assets/AcrophobiaVR/ThirdParty/PolyHaven/LICENSE_PolyHaven_CC0.txt`.
+
+**Baked lighting** - lightmaps with bounced light and ambient occlusion, light probes for moving objects, baked
+reflection probes (cheap enough to keep on Quest). Re-bake with **Rise Above > Bake Lighting (All Scenes)** after
+rebuilding scenes (about 1.5 minutes for all four).
+
+**Before that (still used for building facades)**:
+
 Procedurally generated PBR textures (brick / office / glass facades with lit windows, concrete, asphalt, paving, wood,
 brushed metal, grating, gravel - all with normal maps) tiled at real-world scale, URP post-processing per level mood
 (ACES tonemapping, bloom, colour grading, white balance, vignette, SSAO on PC), soft shadows, reflection probes, detailed

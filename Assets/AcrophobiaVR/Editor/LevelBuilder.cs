@@ -80,13 +80,41 @@ namespace AcrophobiaVR.EditorTools
             EditorSceneManager.SaveScene(scene, SceneDir + "/" + name + ".unity");
         }
 
+        /// <summary>Scene mood for a procedural sky material name (matches the HDRI sky files).</summary>
+        static string MoodForSky(Material sky)
+        {
+            if (sky == null) return null;
+            string assetPath = AssetDatabase.GetAssetPath(sky);
+            string skyName = string.IsNullOrEmpty(assetPath) ? sky.name : System.IO.Path.GetFileNameWithoutExtension(assetPath);
+            switch (skyName)
+            {
+                case "SkyPark": return "park";
+                case "SkySunset": return "sunset";
+                case "SkyNoon": return "noon";
+                case "SkyGolden": return "golden";
+                default: return null;
+            }
+        }
+
         static void Atmosphere(Material sky, Color fogColor, Color ambient)
         {
-            RenderSettings.skybox = sky;
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = ambient;
-            RenderSettings.ambientEquatorColor = Color.Lerp(ambient, fogColor, 0.5f);
-            RenderSettings.ambientGroundColor = ambient * 0.45f;
+            // Real Poly Haven HDRI sky (also drives skybox ambient); falls back to the procedural sky + trilight.
+            string mood = MoodForSky(sky);
+            var hdri = mood != null ? RealAssets.SkyFor(mood) : null;
+            if (hdri != null)
+            {
+                RenderSettings.skybox = hdri;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
+                RenderSettings.ambientIntensity = 1f;
+            }
+            else
+            {
+                RenderSettings.skybox = sky;
+                RenderSettings.ambientMode = AmbientMode.Trilight;
+                RenderSettings.ambientSkyColor = ambient;
+                RenderSettings.ambientEquatorColor = Color.Lerp(ambient, fogColor, 0.5f);
+                RenderSettings.ambientGroundColor = ambient * 0.45f;
+            }
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogColor = fogColor;

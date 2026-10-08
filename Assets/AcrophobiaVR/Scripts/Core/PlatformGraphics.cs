@@ -25,9 +25,11 @@ namespace AcrophobiaVR
             var vol = GetComponent<Volume>();
             if (vol != null) vol.enabled = false;
 
+            // Only realtime probes cost anything at runtime (they re-render the scene); baked probes are
+            // just a cubemap lookup, so they stay on.
             var probes = FindObjectsByType<ReflectionProbe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (int i = 0; i < probes.Length; i++)
-                if (probes[i] != null) probes[i].enabled = false;
+                if (probes[i] != null && probes[i].mode == ReflectionProbeMode.Realtime) probes[i].enabled = false;
         }
 
         void Start()

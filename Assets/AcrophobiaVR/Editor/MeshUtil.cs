@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using UnityEditor;
 using UnityEngine;
 
 namespace AcrophobiaVR.EditorTools
@@ -84,8 +85,55 @@ namespace AcrophobiaVR.EditorTools
             mesh.SetUVs(0, uvs);
             mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
+            GenerateLightmapUVs(mesh, size);
             mesh.RecalculateTangents();
             return mesh;
+        }
+
+        /// <summary>
+        /// Adds a non-overlapping lightmap UV set (uv2) so the mesh can be lightmapped. Runs once per
+        /// cached mesh size, so it stays cheap. The chart margin is sized for roughly two texels at
+        /// LightingBaker's mid-distance lightmap density, which avoids bleeding between cube faces.
+        /// On failure the mesh keeps only uv0 and LightingBaker falls back to light probes for it.
+        /// </summary>
+        static void GenerateLightmapUVs(Mesh mesh, Vector3 size)
+        {
+            // The mesh is a unit cube scaled by its transform. Unwrap it in real-world proportions,
+            // otherwise every face gets the same chart area (a 1200 x 1 x 1200 slab would give its top
+            // only 1/6 of its lightmap, stretched 1200:1), then scale the positions back.
+            Vector3[] unit = mesh.vertices;
+            bool rescaled = false;
+            try
+            {
+                var scaled = new Vector3[unit.Length];
+                for (int i = 0; i < unit.Length; i++) scaled[i] = Vector3.Scale(unit[i], size);
+                mesh.vertices = scaled;
+                rescaled = true;
+
+                float area = 2f * (size.x * size.y + size.y * size.z + size.x * size.z);
+                float texelsAcross = Mathf.Max(1f, Mathf.Sqrt(Mathf.Max(0.0001f, area)) * 2.5f * 0.35f);
+                UnwrapParam param;
+                UnwrapParam.SetDefaults(out param);
+                param.packMargin = Mathf.Clamp(2f / texelsAcross, 1f / 256f, 1f / 16f);
+                if (!Unwrapping.GenerateSecondaryUVSet(mesh, param))
+                    Debug.LogWarning("[MeshUtil] Lightmap UV generation returned false for " + size + "; it will be probe-lit.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[MeshUtil] Lightmap UV generation failed for " + size + ": " + e.Message);
+            }
+            finally
+            {
+                // Back to the unit cube (the unwrapper may have split vertices, so rescale what is there).
+                if (rescaled)
+                {
+                    Vector3[] v = mesh.vertices;
+                    Vector3 inv = new Vector3(1f / size.x, 1f / size.y, 1f / size.z);
+                    for (int i = 0; i < v.Length; i++) v[i] = Vector3.Scale(v[i], inv);
+                    mesh.vertices = v;
+                    mesh.RecalculateBounds();
+                }
+            }
         }
 
         static void AddFace(Vector3 n, Vector3 uAxis, Vector3 vAxis, Vector3 size, float tileU, float tileV,

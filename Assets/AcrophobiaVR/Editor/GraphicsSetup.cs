@@ -311,7 +311,8 @@ namespace AcrophobiaVR.EditorTools
             probeGo.transform.position = probeCenter;
             var probe = probeGo.GetComponent<ReflectionProbe>();
             if (probe == null) probe = probeGo.AddComponent<ReflectionProbe>();
-            probe.mode = ReflectionProbeMode.Realtime;
+            // Baked by LightingBaker (Lightmapping.Bake): free at runtime, so it stays on for Quest too.
+            probe.mode = ReflectionProbeMode.Baked;
             probe.refreshMode = ReflectionProbeRefreshMode.OnAwake;
             probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.NoTimeSlicing;
             probe.size = probeSize;

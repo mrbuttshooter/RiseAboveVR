@@ -37,9 +37,47 @@ namespace AcrophobiaVR.EditorTools
         /// <summary>Surfaces whose albedo already carries natural colour, so the material tint is kept near white.</summary>
         static bool NaturalColour(Surface s) => s == Surface.Grass || s == Surface.Dirt || s == Surface.Asphalt || s == Surface.Wood || s == Surface.GlassFacade;
 
+        /// <summary>
+        /// Tint for real (photo) textures: natural surfaces stay near white (the albedo already has colour);
+        /// concrete / painted metal keep the requested colour, lightened, so red / yellow steel stays red / yellow.
+        /// </summary>
+        static Color RealTint(Surface s, Color requested)
+        {
+            switch (s)
+            {
+                case Surface.Concrete:
+                case Surface.Metal:
+                case Surface.Grate:
+                    return Color.Lerp(requested, Color.white, 0.35f);
+                default:
+                    return Color.Lerp(Color.white, requested, 0.15f);
+            }
+        }
+
         static void ApplySurface(Material m, string name, Color color)
         {
             if (!SurfaceFor.TryGetValue(name, out var s)) return;
+
+            // Real Poly Haven PBR set (non-facade surfaces): albedo + normal + packed metallic/smoothness mask.
+            if (RealAssets.TryGetTextures(s, out var realAlbedo, out var realNormal, out var realMask, out var realTile))
+            {
+                TileByName[name] = realTile;
+                m.SetColor("_BaseColor", RealTint(s, color));
+                m.SetTexture("_BaseMap", realAlbedo);
+                m.mainTexture = realAlbedo;
+                m.SetTexture("_BumpMap", realNormal);
+                m.SetFloat("_BumpScale", 1f);
+                m.EnableKeyword("_NORMALMAP");
+                m.SetTexture("_MetallicGlossMap", realMask);
+                m.EnableKeyword("_METALLICSPECGLOSSMAP");
+                m.SetFloat("_Smoothness", 1f);                // scales the mask alpha when a gloss map is present
+                m.SetFloat("_SmoothnessTextureChannel", 0f);  // smoothness from metallic map alpha
+                m.DisableKeyword("_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A");
+                m.DisableKeyword("_EMISSION");
+                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+                return;
+            }
+
             var ts = ProceduralTextures.Get(s);
             TileByName[name] = ts.tileMeters;
             if (NaturalColour(s)) m.SetColor("_BaseColor", Color.Lerp(Color.white, color, 0.25f));
@@ -95,7 +133,8 @@ namespace AcrophobiaVR.EditorTools
         {
             if (Cache.TryGetValue(name, out var cached) && cached != null)
             {
-                if (SurfaceFor.TryGetValue(name, out var cs) && !TileByName.ContainsKey(name)) TileByName[name] = ProceduralTextures.TileMeters(cs);
+                if (SurfaceFor.TryGetValue(name, out var cs) && !TileByName.ContainsKey(name))
+                    TileByName[name] = RealAssets.TryGetTextures(cs, out _, out _, out _, out var realTile) ? realTile : ProceduralTextures.TileMeters(cs);
                 return cached;
             }
             var m = new Material(Lit);
@@ -212,7 +251,16 @@ namespace AcrophobiaVR.EditorTools
             if (!collider) Object.DestroyImmediate(go.GetComponent<Collider>());
             if (type == PrimitiveType.Cube && mat != null && TileByName.TryGetValue(mat.name, out var tile)) MeshUtil.ApplyTiledUVs(go, tile);
             else if (type == PrimitiveType.Cylinder || type == PrimitiveType.Capsule || type == PrimitiveType.Sphere) { }
-            if (isStatic) GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
+            if (isStatic)
+            {
+                var flags = StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic;
+                // Only large pieces go into the lightmap; small props are lit by light probes (bounded lightmap budget).
+                // World size = mesh size * lossyScale (cylinder / capsule primitive meshes are 2 units tall, cube / sphere 1).
+                var mf = go.GetComponent<MeshFilter>();
+                Vector3 ls = Vector3.Scale(go.transform.lossyScale, mf != null && mf.sharedMesh != null ? mf.sharedMesh.bounds.size : Vector3.one);
+                if (Mathf.Max(Mathf.Abs(ls.x), Mathf.Max(Mathf.Abs(ls.y), Mathf.Abs(ls.z))) >= 1.2f) flags |= StaticEditorFlags.ContributeGI;
+                GameObjectUtility.SetStaticEditorFlags(go, flags);
+            }
             return go;
         }
 

@@ -1,0 +1,4 @@
+Assets in this folder come from Poly Haven (https://polyhaven.com) and are released under CC0 1.0 (public domain).
+No attribution is required; credited here for transparency. See manifest.json for the exact asset ids.
+Skies (2k HDR): kloofendal_38d_partly_cloudy_puresky, belfast_sunset_puresky, kloofendal_48d_partly_cloudy_puresky, qwantani_late_afternoon_puresky.
+Textures (1k JPG, albedo/normal GL/roughness): asphalt_02, concrete, square_concrete_pavers, aerial_grass_rock, dirt, wood_planks, metal_plate, metal_grate_rusty, gravel_concrete_02, rectangular_paving.

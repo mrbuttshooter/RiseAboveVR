@@ -1,0 +1,107 @@
+{
+  "license": "CC0 (Poly Haven, https://polyhaven.com/license)",
+  "hdris": {
+    "park": {
+      "asset": "kloofendal_38d_partly_cloudy_puresky",
+      "file": "sky_park__kloofendal_38d_partly_cloudy_puresky_2k.hdr",
+      "md5": "38ee83ed18b97311af058e41056999ea"
+    },
+    "sunset": {
+      "asset": "belfast_sunset_puresky",
+      "file": "sky_sunset__belfast_sunset_puresky_2k.hdr",
+      "md5": "4bb56d6163ef1c7ec762e4a7ef8ede81"
+    },
+    "noon": {
+      "asset": "kloofendal_48d_partly_cloudy_puresky",
+      "file": "sky_noon__kloofendal_48d_partly_cloudy_puresky_2k.hdr",
+      "md5": "2eba3a4d7eeb23cbfbeca364c97e7980"
+    },
+    "golden": {
+      "asset": "qwantani_late_afternoon_puresky",
+      "file": "sky_golden__qwantani_late_afternoon_puresky_2k.hdr",
+      "md5": "29e6be57b9ce3ead992131fdd2eff285"
+    }
+  },
+  "textures": {
+    "Asphalt": {
+      "asset": "asphalt_02",
+      "maps": {
+        "albedo": "tex_Asphalt_albedo__asphalt_02_1k.jpg",
+        "normal": "tex_Asphalt_normal__asphalt_02_1k.jpg",
+        "rough": "tex_Asphalt_rough__asphalt_02_1k.jpg"
+      }
+    },
+    "Concrete": {
+      "asset": "concrete",
+      "maps": {
+        "albedo": "tex_Concrete_albedo__concrete_1k.jpg",
+        "normal": "tex_Concrete_normal__concrete_1k.jpg",
+        "rough": "tex_Concrete_rough__concrete_1k.jpg"
+      }
+    },
+    "Pavement": {
+      "asset": "square_concrete_pavers",
+      "maps": {
+        "albedo": "tex_Pavement_albedo__square_concrete_pavers_1k.jpg",
+        "normal": "tex_Pavement_normal__square_concrete_pavers_1k.jpg",
+        "rough": "tex_Pavement_rough__square_concrete_pavers_1k.jpg"
+      }
+    },
+    "Grass": {
+      "asset": "aerial_grass_rock",
+      "maps": {
+        "albedo": "tex_Grass_albedo__aerial_grass_rock_1k.jpg",
+        "normal": "tex_Grass_normal__aerial_grass_rock_1k.jpg",
+        "rough": "tex_Grass_rough__aerial_grass_rock_1k.jpg"
+      }
+    },
+    "Dirt": {
+      "asset": "dirt",
+      "maps": {
+        "albedo": "tex_Dirt_albedo__dirt_1k.jpg",
+        "normal": "tex_Dirt_normal__dirt_1k.jpg",
+        "rough": "tex_Dirt_rough__dirt_1k.jpg"
+      }
+    },
+    "Wood": {
+      "asset": "wood_planks",
+      "maps": {
+        "albedo": "tex_Wood_albedo__wood_planks_1k.jpg",
+        "normal": "tex_Wood_normal__wood_planks_1k.jpg",
+        "rough": "tex_Wood_rough__wood_planks_1k.jpg"
+      }
+    },
+    "Metal": {
+      "asset": "metal_plate",
+      "maps": {
+        "albedo": "tex_Metal_albedo__metal_plate_1k.jpg",
+        "normal": "tex_Metal_normal__metal_plate_1k.jpg",
+        "rough": "tex_Metal_rough__metal_plate_1k.jpg"
+      }
+    },
+    "Grate": {
+      "asset": "metal_grate_rusty",
+      "maps": {
+        "albedo": "tex_Grate_albedo__metal_grate_rusty_1k.jpg",
+        "normal": "tex_Grate_normal__metal_grate_rusty_1k.jpg",
+        "rough": "tex_Grate_rough__metal_grate_rusty_1k.jpg"
+      }
+    },
+    "RoofGravel": {
+      "asset": "gravel_concrete_02",
+      "maps": {
+        "albedo": "tex_RoofGravel_albedo__gravel_concrete_02_1k.jpg",
+        "normal": "tex_RoofGravel_normal__gravel_concrete_02_1k.jpg",
+        "rough": "tex_RoofGravel_rough__gravel_concrete_02_1k.jpg"
+      }
+    },
+    "Tiles": {
+      "asset": "rectangular_paving",
+      "maps": {
+        "albedo": "tex_Tiles_albedo__rectangular_paving_1k.jpg",
+        "normal": "tex_Tiles_normal__rectangular_paving_1k.jpg",
+        "rough": "tex_Tiles_rough__rectangular_paving_1k.jpg"
+      }
+    }
+  }
+}

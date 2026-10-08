@@ -15,7 +15,7 @@ Rise Above turns those principles into game design:
 
 | Therapy principle | How the game does it |
 |---|---|
-| Graded hierarchy (low -> high) | 3 levels: 6 m balcony -> 25-31 m construction site -> 150 m skyscraper. Levels unlock in order. |
+| Graded hierarchy (low -> high) | 3 levels: 6-13 m cafe balcony & roof -> 25-31 m construction site -> 150 m skyscraper. Levels unlock in order. |
 | Measuring anxiety (SUDS 0-10) | Before and after every level the player rates their anxiety. Results go to a CSV log and the trophy-wall graph. |
 | Approach, don't avoid | Tasks require looking down, leaning over railings, walking on glass, crossing beams. |
 | Feeling in control | **Calm Meadow** escape at any moment (X button / Esc) and back to the checkpoint when ready. |
@@ -107,10 +107,13 @@ All audio is synthesised in code (no audio files) and placed in 3D space:
 
 **Park hub (main menu)** - level portals, exposure-mode picker, trophy wall with before/after anxiety bars, help board.
 
-**Level 1 - Sunset Cafe balcony (6 m)**
-- Water three flowers on a shelf *outside* the railing (grab the can, tilt to pour)
+**Level 1 - The Sunset Cafe (6 m balcony -> 13 m roof)**
+- Water three flowers on a shelf *outside* the railing (grab the can by its handle, tilt to pour)
 - Look down and find the street musician, the fountain and a dog on a walk (hold your gaze)
 - Walk the glass skywalk - the glass cracks while you stand on it, so keep moving
+- Rescue Kiwi the parrot from a 40 cm window ledge outside the railing (balance meter; a handrail appears only in Gentle mode)
+- Climb the fire-escape ladder to the roof terrace at 13 m - more than double the starting height
+- Ring the bell on the roof to finish (the roof edge has only a knee-high parapet)
 
 **Level 2 - Construction site (25-31 m)**
 - Ride an open lift that *stalls halfway* (Pip talks you through it)
@@ -125,7 +128,7 @@ All audio is synthesised in code (no audio files) and placed in 3D space:
 - Cross a swaying rope bridge, walk a plank to rescue Mittens the cat
 - Launch the fireworks finale over the city
 
-**Stars** per level: finish (1) + no slips (1) + all three Courage Stars (1). Courage Stars float at the scariest spots.
+**Stars** per level: finish (1) + no slips (1) + all Courage Stars (1). Courage Stars float at the scariest spots.
 
 ## Controls
 

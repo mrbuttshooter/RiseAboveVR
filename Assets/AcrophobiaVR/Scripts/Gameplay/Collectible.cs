@@ -10,6 +10,7 @@ namespace AcrophobiaVR
     {
         public string displayName = "Item";
         public bool isCat;
+        public bool isBird;
         public CollectObjective Owner { get; set; }
 
         bool taken;
@@ -26,7 +27,7 @@ namespace AcrophobiaVR
         {
             if (taken) return;
             // Gentle idle animation so items are easy to spot.
-            if (!isCat) transform.Rotate(0f, 40f * Time.deltaTime, 0f, Space.World);
+            if (!isCat && !isBird) transform.Rotate(0f, 40f * Time.deltaTime, 0f, Space.World);
         }
 
         void OnGrabbed(SelectEnterEventArgs args) => Take();
@@ -45,7 +46,9 @@ namespace AcrophobiaVR
             }
             taken = true;
             Haptics.Medium();
-            if (isCat) ProceduralAudio.PlayMeowAt(transform.position); else ProceduralAudio.PlayChime(1.4f);
+            if (isCat) ProceduralAudio.PlayMeowAt(transform.position);
+            else if (isBird) ProceduralAudio.PlayChirpAt(transform.position);
+            else ProceduralAudio.PlayChime(1.4f);
             if (isCat) Achievements.Unlock("cat_rescuer");
             if (Owner != null) Owner.NotifyCollected(this);
             StartCoroutine(Vanish());

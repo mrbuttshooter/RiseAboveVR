@@ -22,14 +22,14 @@ namespace AcrophobiaVR
 
         public static readonly string[] LevelTitles =
         {
-            "Level 1 - The Balcony",
+            "Level 1 - The Cafe",
             "Level 2 - The Construction Site",
             "Level 3 - The Skyscraper Beam",
         };
 
         public static readonly string[] LevelDescriptions =
         {
-            "Look down from a cafe balcony and walk a glass skywalk.",
+            "Walk on glass, rescue a parrot on a ledge, climb to the roof.",
             "Ride an open lift, cross planks, climb the crane.",
             "Cross a beam between towers and rescue a cat.",
         };

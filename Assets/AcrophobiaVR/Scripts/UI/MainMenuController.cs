@@ -86,8 +86,8 @@ namespace AcrophobiaVR
             bool unlocked = GameManager.Instance.IsUnlocked(i);
             var card = UIFactory.Panel(root, unlocked ? new Color(0.13f, 0.23f, 0.35f, 1f) : new Color(0.13f, 0.13f, 0.16f, 1f), pos, new Vector2(525, 520));
             var t = card.transform;
-            string[] names = { "The Balcony", "Construction Site", "The Skyscraper" };
-            string[] heights = { "6 m", "25 m", "150 m" };
+            string[] names = { "The Cafe", "Construction Site", "The Skyscraper" };
+            string[] heights = { "6-13 m", "25 m", "150 m" };
             UIFactory.Label(t, "LEVEL " + (i + 1), 38, new Vector2(0, 205), new Vector2(500, 56), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
             UIFactory.Label(t, names[i], 50, new Vector2(0, 145), new Vector2(510, 70), TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
             UIFactory.Label(t, heights[i] + " high", 44, new Vector2(0, 80), new Vector2(500, 60), TextAnchor.MiddleCenter, UIFactory.Warn, FontStyle.Bold);

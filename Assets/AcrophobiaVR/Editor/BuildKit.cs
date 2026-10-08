@@ -466,6 +466,10 @@ namespace AcrophobiaVR.EditorTools
                 Vector3 p = Vector3.Lerp(bottom, top, i / (float)rungs);
                 var rung = Bar("Rung", ladder, p + Vector3.left * width * 0.5f, p + Vector3.right * width * 0.5f, 0.04f, mat, true, false);
                 rung.AddComponent<ClimbInteractable>();
+                // ClimbInteractable requires a Rigidbody and Unity adds a dynamic one, which drops every rung on play.
+                var rungBody = rung.GetComponent<Rigidbody>();
+                rungBody.isKinematic = true;
+                rungBody.useGravity = false;
             }
         }
 

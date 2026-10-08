@@ -396,6 +396,7 @@ namespace AcrophobiaVR
         public static void PlayMeowAt(Vector3 position) => PlayAt(Get().meow, position, 1f, Random.Range(0.95f, 1.1f), 1f, 25f);
         public static void PlayBoomAt(Vector3 position) => PlayAt(Get().boom, position, 1f, Random.Range(0.8f, 1.2f), 25f, 500f);
         public static void PlayChirpAt(Vector3 position) => PlayAt(Get().chirp, position, 0.7f, Random.Range(0.95f, 1.15f), 1.5f, 40f);
+        public static void PlayBellAt(Vector3 position) => PlayAt(Get().chime, position, 1f, Random.Range(0.48f, 0.52f), 3f, 150f);
 
         /// <summary>Wood/rope creak or groan. Higher intensity = louder and lower-pitched.</summary>
         public static void PlayCreakAt(Vector3 position, float intensity01)

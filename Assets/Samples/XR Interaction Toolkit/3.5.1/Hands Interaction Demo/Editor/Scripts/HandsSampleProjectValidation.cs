@@ -136,8 +136,9 @@ namespace UnityEditor.XR.Interaction.Toolkit.Samples.Hands.Editor
                 BuildValidator.AddRules(buildTargetGroup, s_BuildValidationRules);
             }
 
-            // Delay evaluating conditions for issues to give time for Package Manager and UPM cache to fully initialize.
-            EditorApplication.delayCall += ShowWindowIfIssuesExist;
+            // Rise Above: not run at load. Its predicates call PackageVersionUtility, whose cold-cache path
+            // spins on Client.List on the main thread and deadlocks Unity 6.3 at startup. The rules are still
+            // listed under Project Settings > XR Plug-in Management > Project Validation.
         }
 
         static void ShowWindowIfIssuesExist()

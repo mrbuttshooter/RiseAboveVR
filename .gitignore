@@ -33,3 +33,5 @@ Thumbs.db
 *.aab
 *.unitypackage
 crashlytics-build.properties
+# Android build temp
+/.utmp/

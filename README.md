@@ -47,6 +47,36 @@ brushed metal, grating, gravel - all with normal maps) tiled at real-world scale
 props (cars with wheels and lights, layered trees, street lamps, benches, people, rooftop machinery). On Quest the heavy
 post-processing and probes switch off automatically (`PlatformGraphics`).
 
+## Extra features
+
+- **Courage Elevator (free practice)** - a glass lift in the park (to your right at the start). Press UP / DOWN / STOP and
+  ride to any height up to 120 m, at your own pace. Pip comments at 10, 25, 50 and 100 m; your best height is saved.
+  This is self-paced graded exposure: the player decides how high to go.
+- **Brave Photos** - press **B** on the right controller (or **F** on the keyboard) to take a photo from where you stand.
+  Photos taken high up (or while your heart is racing) count as *brave photos*. Saved to `<persistentDataPath>/Photos`.
+- **Achievements** - 12 badges (First Look Down, Glass Walker, Rode the Wave, Steady Feet, Star Collector, Rise Above,
+  Sky High, Brave Soul, Cat Rescuer, Calm Breather, Photographer, Cloud Walker) with golden pop-ups.
+- **My Progress** (button on the main menu) - your last sessions (anxiety before/after, peak BPM, panic waves beaten,
+  slips), the achievements grid, totals, and **Export report** which writes `RiseAbove_Report.html` with tables and
+  bar charts - ready to put in the project report.
+- **Fear muffles hearing** - at high fear the world sounds dull and distant while your heartbeat stays clear.
+
+## Installing on Meta Quest
+
+1. Enable **Developer Mode** for the headset (Meta Horizon phone app > Devices > Developer Mode).
+2. Connect the Quest to the PC with a USB-C cable and accept the "Allow USB debugging" prompt inside the headset.
+3. Install the APK, either:
+   - with **SideQuest** (drag `Builds\Quest\RiseAboveVR.apk` onto it), or
+   - with ADB: `adb install -r E:\Unity_project\Builds\Quest\RiseAboveVR.apk`
+     (ADB ships with Unity: `E:\UnityEditors\6000.3.25f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`).
+4. In the headset: **Library > Unknown Sources > Rise Above VR**.
+5. Play standing in a cleared guardian area (room-scale) - or seated. Left **X** = Calm Meadow at any time.
+
+Settings used for Quest: IL2CPP + ARM64, Vulkan, ASTC textures, min Android API 32 (Quest 2 / Pro / 3 / 3S),
+OpenXR single-pass instanced (multiview), foveated rendering, Meta Quest Support + Touch controller profiles, the
+"Performance" URP quality level, post-processing and reflection probes switched off on device (`PlatformGraphics`,
+`QuestPerformance`). Re-apply any time with **Rise Above > Configure for Meta Quest**.
+
 ## Sound & feel
 
 All audio is synthesised in code (no audio files) and placed in 3D space:

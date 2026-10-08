@@ -112,7 +112,8 @@ namespace AcrophobiaVR
                 Transform t = c.transform;
                 if (root != null && t.IsChildOf(root)) continue;
                 if (t.IsChildOf(rig.transform)) continue;
-                if (c.GetComponentInParent<XRBaseInteractable>() != null) continue; // held / grabbable items
+                // Skip held / grabbable items only - teleportable floors are interactables too and must still give footsteps.
+                if (c.GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable>() != null) continue;
                 bestDist = h.distance;
                 best = h;
                 found = true;

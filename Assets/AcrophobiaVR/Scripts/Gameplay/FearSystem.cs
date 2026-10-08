@@ -65,6 +65,13 @@ namespace AcrophobiaVR
         AudioClip heartClip;
         AudioClip ringClip;
 
+        // Fear muffles hearing: a low-pass filter on the active AudioListener.
+        const float ClearCutoff = 22000f;
+        AudioListener listener;
+        AudioLowPassFilter muffle;
+        float nextListenerCheck;
+        float muffleCutoff = ClearCutoff;
+
         static readonly Vector3[] SampleDirs = BuildSampleDirs();
 
         static Vector3[] BuildSampleDirs()
@@ -87,6 +94,7 @@ namespace AcrophobiaVR
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
             audioSource.spatialBlend = 0f;
+            audioSource.bypassListenerEffects = true;   // heartbeat stays crisp while the world goes muffled
             heartClip = MakeHeartbeat();
             ringClip = MakeRing();
         }
@@ -95,6 +103,11 @@ namespace AcrophobiaVR
         {
             if (Instance == this) Instance = null;
             if (volume != null && volume.sharedProfile != null) Destroy(volume.sharedProfile);
+            if (muffle != null)
+            {
+                muffle.cutoffFrequency = ClearCutoff;
+                muffle.enabled = false;
+            }
         }
 
         // ------------------------------------------------------------------ setup
@@ -194,6 +207,7 @@ namespace AcrophobiaVR
             UpdatePanic(lc, lookingUp, dt);
             UpdateHeart(dt);
             ApplyEffects(rig, head);
+            UpdateMuffle(dt);
             FollowHead(head);
 
             if (!tutorialSaid && fear > 0.5f && lc != null && lc.Started)
@@ -322,6 +336,8 @@ namespace AcrophobiaVR
                 HeadHud.Instance.ShowMessage("The wave passed. Well done!", 2.5f);
                 ProceduralAudio.PlayChime(1.1f);
                 Companion.Say("See? You rode the wave and it passed. That's exactly how fear works.", 5f);
+                // After the HUD message: the achievement toast is shown immediately and would otherwise be overwritten.
+                Achievements.Unlock("panic_beaten");
             }
             else if (Time.time - panicStarted > freezeLimit && lookUpTimer < 0.5f && lc != null)
             {
@@ -390,6 +406,46 @@ namespace AcrophobiaVR
                 if (baseFov < 0f) baseFov = cam.fieldOfView;
                 cam.fieldOfView = baseFov - f * 9f + Mathf.Sin(Time.time * 1.7f) * f * 1.5f;
             }
+        }
+
+        /// <summary>
+        /// Fear narrows hearing as well as vision: the whole world is low-passed (muffled) as fear rises,
+        /// and almost silenced during a panic wave. Sources with bypassListenerEffects (heartbeat, ring,
+        /// camera shutter) stay clear on top.
+        /// </summary>
+        void UpdateMuffle(float dt)
+        {
+            if (Time.unscaledTime >= nextListenerCheck)
+            {
+                nextListenerCheck = Time.unscaledTime + 0.5f;
+                if (listener == null || !listener.isActiveAndEnabled)
+                {
+                    var found = FindFirstObjectByType<AudioListener>();
+                    if (found != null && found != listener)
+                    {
+                        if (muffle != null)
+                        {
+                            muffle.cutoffFrequency = ClearCutoff;
+                            muffle.enabled = false;
+                        }
+                        listener = found;
+                        muffle = listener.GetComponent<AudioLowPassFilter>();
+                        if (muffle == null) muffle = listener.gameObject.AddComponent<AudioLowPassFilter>();
+                        muffle.lowpassResonanceQ = 1f;
+                        muffle.cutoffFrequency = muffleCutoff;
+                    }
+                }
+            }
+            if (muffle == null) return;
+
+            float targetCutoff = panic ? 650f : Mathf.Lerp(ClearCutoff, 1100f, Mathf.Pow(fear, 1.6f));
+            // Glide in log-frequency space so the panic on/off switch doesn't pop.
+            float k = 1f - Mathf.Exp(-8f * dt);
+            muffleCutoff = Mathf.Exp(Mathf.Lerp(Mathf.Log(muffleCutoff), Mathf.Log(targetCutoff), k));
+            muffle.cutoffFrequency = muffleCutoff;
+            muffle.lowpassResonanceQ = 1f;
+            bool on = muffleCutoff < 21000f;            // skip the DSP entirely when fully clear
+            if (muffle.enabled != on) muffle.enabled = on;
         }
 
         void FollowHead(Transform head)

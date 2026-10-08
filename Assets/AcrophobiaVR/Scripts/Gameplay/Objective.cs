@@ -27,6 +27,8 @@ namespace AcrophobiaVR
             ProceduralAudio.PlaySuccess();
             FearSystem.Relief(0.3f);
             if (!string.IsNullOrEmpty(companionLineOnComplete)) Companion.Say(companionLineOnComplete);
+            if (this is LookDownObjective) Achievements.Unlock("first_look");
+            if (description != null && description.ToLowerInvariant().Contains("glass skywalk")) Achievements.Unlock("glass_walker");
             Completed?.Invoke(this);
         }
     }

@@ -46,6 +46,7 @@ namespace AcrophobiaVR
             taken = true;
             Haptics.Medium();
             if (isCat) ProceduralAudio.PlayMeowAt(transform.position); else ProceduralAudio.PlayChime(1.4f);
+            if (isCat) Achievements.Unlock("cat_rescuer");
             if (Owner != null) Owner.NotifyCollected(this);
             StartCoroutine(Vanish());
         }

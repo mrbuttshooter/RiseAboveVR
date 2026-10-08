@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AcrophobiaVR
 {
-    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds }
+    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds, Construction }
 
     /// <summary>
     /// Looping 3D ambient sound source for otherwise silent scene objects (busker, fountain, cars, lift motors,
@@ -59,6 +59,7 @@ namespace AcrophobiaVR
                     break;
                 case EmitterKind.CafeChatter: minD = 2f; maxD = 18f; kindVolume = 0.5f; priority = 130; break;
                 case EmitterKind.Birds: minD = 5f; maxD = 80f; kindVolume = 1f; priority = 140; break;
+                case EmitterKind.Construction: minD = 8f; maxD = 120f; kindVolume = 0.9f; priority = 110; break;
             }
             source.minDistance = minD;
             source.maxDistance = maxD;
@@ -97,7 +98,7 @@ namespace AcrophobiaVR
                 return;
             }
 
-            float target = platform == null ? 1f : (platform.IsMoving ? 1f : 0f);
+            float target = platform == null ? 1f : (platform.MotorRunning ? 1f : 0f);
             float rate = target > motorLevel ? 1.5f : 0.8f;
             motorLevel = Mathf.MoveTowards(motorLevel, target, Time.deltaTime * rate);
             source.volume = baseVolume * motorLevel;
@@ -130,6 +131,7 @@ namespace AcrophobiaVR
                 case EmitterKind.CarEngine: data = GenEngine(rate); break;
                 case EmitterKind.Motor: data = GenMotor(rate); break;
                 case EmitterKind.CafeChatter: data = GenChatter(rate); break;
+                case EmitterKind.Construction: data = GenConstruction(rate); break;
                 default: data = GenBirds(rate); break;
             }
             if (data == null || data.Length == 0) return null;
@@ -467,6 +469,77 @@ namespace AcrophobiaVR
         }
 
         /// <summary>6 s: 3-6 short chirp phrases (2.5-5 kHz sweeps) with silence between, wrapped seamlessly.</summary>
+        /// <summary>
+        /// 8 s construction-site loop: generator hum (whole number of cycles), bursts of hammer blows with a
+        /// metallic ring, a power-drill whine and a reversing truck's beeper. Events sit inside the loop so it is seamless.
+        /// </summary>
+        static float[] GenConstruction(int rate)
+        {
+            const float seconds = 8f;
+            int n = (int)(seconds * rate);
+            var o = new float[n];
+            var rng = new System.Random(808);
+
+            // Generator: 50 Hz + 100 Hz, 400 / 800 full cycles in 8 s -> seamless.
+            for (int i = 0; i < n; i++)
+            {
+                double t = i / (double)rate;
+                o[i] = 0.05f * Sin01(50.0 * t) + 0.03f * Sin01(100.0 * t);
+            }
+
+            // Hammer blows: 3 bursts of 3-5 hits.
+            float[] burstStarts = { 0.4f, 3.1f, 5.6f };
+            foreach (float bs in burstStarts)
+            {
+                int hits = rng.Next(3, 6);
+                float tHit = bs;
+                for (int h = 0; h < hits; h++)
+                {
+                    int s0 = (int)(tHit * rate);
+                    int len = (int)(0.35f * rate);
+                    float amp = R(rng, 0.35f, 0.55f);
+                    for (int k = 0; k < len && s0 + k < n; k++)
+                    {
+                        float t = k / (float)rate;
+                        float ring = 0.6f * Mathf.Sin(2f * Mathf.PI * 820f * t) + 0.35f * Mathf.Sin(2f * Mathf.PI * 1930f * t) + 0.2f * Mathf.Sin(2f * Mathf.PI * 3170f * t);
+                        float thud = Noise(rng) * Mathf.Exp(-t * 90f);
+                        o[s0 + k] += amp * (thud * 0.8f + ring * Mathf.Exp(-t * 18f) * 0.5f);
+                    }
+                    tHit += R(rng, 0.38f, 0.55f);
+                }
+            }
+
+            // Power drill: one 1.3 s whine with a slight pitch wobble.
+            {
+                int s0 = (int)(2.0f * rate), len = (int)(1.3f * rate);
+                double phase = 0;
+                for (int k = 0; k < len && s0 + k < n; k++)
+                {
+                    float t = k / (float)rate;
+                    float env = Mathf.Clamp01(t * 8f) * Mathf.Clamp01((1.3f - t) * 8f);
+                    float f = 720f + 60f * Mathf.Sin(2f * Mathf.PI * 3f * t);
+                    phase += f / rate;
+                    float saw = (float)(2.0 * (phase - System.Math.Floor(phase + 0.5)));
+                    o[s0 + k] += env * 0.12f * (saw + 0.3f * Noise(rng));
+                }
+            }
+
+            // Reversing truck beeper: 4 beeps of 1 kHz.
+            for (int b = 0; b < 4; b++)
+            {
+                int s0 = (int)((6.0f + b * 0.45f) * rate), len = (int)(0.22f * rate);
+                for (int k = 0; k < len && s0 + k < n; k++)
+                {
+                    float t = k / (float)rate;
+                    float env = Mathf.Clamp01(t * 200f) * Mathf.Clamp01((0.22f - t) * 200f);
+                    o[s0 + k] += env * 0.09f * Mathf.Sign(Mathf.Sin(2f * Mathf.PI * 1000f * t));
+                }
+            }
+
+            for (int i = 0; i < n; i++) o[i] = Mathf.Clamp(o[i], -1f, 1f);
+            return o;
+        }
+
         static float[] GenBirds(int rate)
         {
             int n = rate * 6;

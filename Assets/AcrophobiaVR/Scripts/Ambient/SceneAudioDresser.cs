@@ -50,7 +50,19 @@ namespace AcrophobiaVR
             Try(DressPlatforms);
             Try(DressCafe);
             Try(DressBirds);
+            Try(DressConstruction);
             Try(DressFootsteps);
+        }
+
+        /// <summary>Level 2: distant hammering, drills, a reversing truck and a generator from the site below.</summary>
+        static void DressConstruction()
+        {
+            var building = GameObject.Find("BuildingA");
+            if (building == null || building.transform.Find("ConstructionAmbience") != null) return;
+            var go = new GameObject("ConstructionAmbience");
+            go.transform.SetParent(building.transform, false);
+            go.transform.position = new Vector3(-2f, 2f, 4f);
+            Add(go, EmitterKind.Construction);
         }
 
         static void Try(System.Action step)

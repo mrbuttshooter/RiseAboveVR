@@ -49,6 +49,8 @@ namespace AcrophobiaVR
             UIFactory.FullPanel(root, new Color(0.06f, 0.1f, 0.16f, 0.95f));
             UIFactory.Label(root, "RISE ABOVE", 130, new Vector2(0, 470), new Vector2(1650, 150), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
             UIFactory.Label(root, "Overcome the fear of heights - one step at a time", 46, new Vector2(0, 375), new Vector2(1650, 64), TextAnchor.MiddleCenter, Dim);
+            // Top-right, clear of the ~900 px wide centred title text.
+            UIFactory.Button(root, "My Progress", new Vector2(640, 470), new Vector2(300, 80), UIFactory.Accent * 0.75f, ProgressReport.Show, 36);
 
             for (int i = 0; i < GameManager.LevelScenes.Length; i++)
                 BuildLevelCard(root, i, new Vector2((i - 1) * 555, 70));
@@ -135,6 +137,7 @@ namespace AcrophobiaVR
                 {
                     GameManager.Instance.ResetProgress();
                     ProgressStore.ResetAll();
+                    Achievements.ResetAll();
                     GameManager.Instance.LoadMenu();
                 }, new Color(0.5f, 0.2f, 0.2f)),
                 new Dialog.Choice("Cancel", null));

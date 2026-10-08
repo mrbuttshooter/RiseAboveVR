@@ -176,7 +176,13 @@ namespace AcrophobiaVR
                 SessionLogger.Log(SceneName, "anxiety_after", after.ToString());
                 int stars = 1 + (Slips == 0 ? 1 : 0) + (CourageStar.Total == 0 || CourageStar.Collected == CourageStar.Total ? 1 : 0);
                 int before = Mathf.Max(0, ratingBefore);
+                if (Slips == 0) Achievements.Unlock("steady_feet");
+                if (CourageStar.Total > 0 && CourageStar.Collected == CourageStar.Total) Achievements.Unlock("star_collector");
+                if (levelIndex == 2) Achievements.Unlock("sky_high");
+                if (ExposureSettings.Mode == ExposureMode.Brave) Achievements.Unlock("brave_soul");
+                if (FearSystem.PanicsBeaten > 0) Achievements.Unlock("panic_beaten"); // fallback; FearSystem may also unlock it live (idempotent)
                 ProgressStore.RecordResult(levelIndex, stars, seconds, before, after);
+                if (ProgressStore.TotalStars() >= 9) Achievements.Unlock("all_stars");
                 GameManager.Instance.CompleteLevel(levelIndex);
                 ShowSummary(stars, seconds, before, after);
             });

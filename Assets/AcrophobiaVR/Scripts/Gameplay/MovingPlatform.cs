@@ -31,6 +31,11 @@ namespace AcrophobiaVR
 
         public bool IsMoving => moving;
 
+        /// <summary>False while the platform is stalled mid-ride, so the motor falls silent (the silence is part of the scare).</summary>
+        public bool MotorRunning => moving && !stalled;
+
+        bool stalled;
+
         /// <summary>True while any platform is carrying the player (fall detection is paused).</summary>
         public static bool AnyRiding { get; private set; }
 
@@ -95,6 +100,7 @@ namespace AcrophobiaVR
                 if (i == stallAtWaypoint)
                 {
                     AmbientAudio.Machinery = 0f;
+                    stalled = true;
                     ProceduralAudio.PlayClunkAt(transform.position);
                     Haptics.Medium();
                     Companion.Say(stallLine, stallSeconds);
@@ -107,6 +113,7 @@ namespace AcrophobiaVR
                         yield return null;
                     }
                     if (swingVisual != null) swingVisual.localPosition = Vector3.zero;
+                    stalled = false;
                     ProceduralAudio.PlayClunkAt(transform.position);
                     Haptics.Medium();
                     Companion.Say("And we're moving again. Well done for staying calm!", 3.5f);

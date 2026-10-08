@@ -74,6 +74,8 @@ namespace AcrophobiaVR
                 done++;
                 if (!loopForever) count.text = done + " / " + cycles;
             }
+            // Reached only when every cycle was breathed through (the "I feel ready" button skips straight to Finish).
+            if (cycles > 0) Achievements.Unlock("calm_breather");
             Finish();
         }
 

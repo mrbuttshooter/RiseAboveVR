@@ -22,23 +22,44 @@ namespace AcrophobiaVR
             if (owner == null || owner.IsComplete) return;
             if (!held)
             {
-                held = true;
-                var rb = GetComponent<Rigidbody>();
-                if (rb != null) rb.isKinematic = true;
+                SetHeld(true);
             }
             else if (owner.PlayerNearTarget())
             {
-                held = false;
+                SetHeld(false);
                 owner.Deliver();
             }
         }
 
-        void Update()
+        void SetHeld(bool on)
+        {
+            held = on;
+            var rb = GetComponent<Rigidbody>();
+            if (on && rb != null) rb.isKinematic = true;
+            // While carried it must not shove the player's capsule or block the crosshair (same fix as the watering can).
+            foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = !on;
+        }
+
+        void Start()
+        {
+            var rig = PlayerRig.Instance;
+            if (rig == null || rig.Body == null) return;
+            foreach (var c in GetComponentsInChildren<Collider>(true)) Physics.IgnoreCollision(c, rig.Body, true);
+        }
+
+        void LateUpdate()
         {
             if (!held || PlayerRig.Instance == null) return;
+            if (owner == null || owner.IsComplete)
+            {
+                SetHeld(false);
+                return;
+            }
             var head = PlayerRig.Instance.Head;
-            transform.position = Vector3.Lerp(transform.position, head.position + head.forward * 0.7f - head.up * 0.2f + head.right * 0.15f, Time.deltaTime * 12f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(Vector3.ProjectOnPlane(head.forward, Vector3.up)), Time.deltaTime * 8f);
+            Vector3 flat = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+            if (flat.sqrMagnitude < 0.001f) flat = head.up;
+            transform.position = head.position + head.forward * 0.7f - head.up * 0.25f + head.right * 0.22f;
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(flat), Time.deltaTime * 10f);
         }
     }
 }

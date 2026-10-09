@@ -13,6 +13,12 @@ namespace AcrophobiaVR
     {
         Action<int> onRated;
         bool done;
+        static int openCount;
+
+        public static bool IsOpen => openCount > 0;
+
+        void OnEnable() => openCount++;
+        void OnDisable() => openCount = Mathf.Max(0, openCount - 1);
 
         static readonly string[] Words =
         {

@@ -12,6 +12,9 @@ namespace AcrophobiaVR
     {
         static readonly List<BalanceBeam> All = new List<BalanceBeam>();
 
+        /// <summary>Until this time every beam acts as if a gust is blowing (set by FlyBy rotor wash).</summary>
+        public static float ExternalGustUntil;
+
         [Header("Shape")]
         public Transform start;
         public Transform end;
@@ -109,6 +112,8 @@ namespace AcrophobiaVR
                 gustNow = Time.time - gustStart < gustDuration;
                 AmbientAudio.GustBoost = gustNow ? 1f : 0f;
             }
+            // Something else is blasting the beam (a helicopter's rotor wash).
+            if (Time.time < ExternalGustUntil) gustNow = true;
 
             if (active)
             {

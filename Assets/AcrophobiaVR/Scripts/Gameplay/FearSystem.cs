@@ -61,6 +61,11 @@ namespace AcrophobiaVR
         Transform heartPanel;
         TMPro.TMP_Text heartText;
         Image heartIcon;
+        CanvasGroup heartGroup;
+        Image[] lifeHearts;
+        Vector3 heartBaseScale = Vector3.one;
+        bool heartPinned;
+        int shownLives = -1;
         AudioSource audioSource;
         AudioClip heartClip;
         AudioClip ringClip;
@@ -172,12 +177,22 @@ namespace AcrophobiaVR
 
         void BuildHeartPanel()
         {
-            var canvas = UIFactory.CreateWorldCanvas("HeartRate", new Vector2(330, 110), 0.0011f, transform);
+            var canvas = UIFactory.CreateWorldCanvas("HeartRate", new Vector2(330, 150), 0.0011f, transform);
             foreach (var r in canvas.GetComponents<UnityEngine.EventSystems.BaseRaycaster>()) r.enabled = false;
             heartPanel = canvas.transform;
+            heartBaseScale = heartPanel.localScale;
+            heartGroup = canvas.gameObject.AddComponent<CanvasGroup>();
+            heartGroup.alpha = 0f;
             UIFactory.FullPanel(heartPanel, new Color(0.05f, 0.07f, 0.1f, 0.75f));
-            heartIcon = UIFactory.CircleImage(heartPanel, new Color(1f, 0.35f, 0.4f), new Vector2(-110, 0), 56);
-            heartText = UIFactory.Label(heartPanel, "70 BPM", 46, new Vector2(40, 0), new Vector2(230, 90), TextAnchor.MiddleLeft, Color.white, FontStyle.Bold);
+            heartIcon = UIFactory.CircleImage(heartPanel, new Color(1f, 0.35f, 0.4f), new Vector2(-110, 20), 56);
+            heartText = UIFactory.Label(heartPanel, "70 BPM", 46, new Vector2(40, 20), new Vector2(230, 90), TextAnchor.MiddleLeft, Color.white, FontStyle.Bold);
+            lifeHearts = UIFactory.HeartRow(heartPanel, LevelController.MaxLives, LevelController.MaxLives, new Vector2(0, -45), 30f);
+        }
+
+        /// <summary>A jolt of fear (startling birds, a gust, a fall).</summary>
+        public static void Spike(float amount)
+        {
+            if (Instance != null) Instance.fear = Mathf.Min(1f, Instance.fear + amount);
         }
 
         // ------------------------------------------------------------------ simulation
@@ -448,9 +463,42 @@ namespace AcrophobiaVR
             if (muffle.enabled != on) muffle.enabled = on;
         }
 
+        /// <summary>
+        /// VR: the heart rate (and lives) is a smartwatch on the left wrist - glance at it when you want to.
+        /// Desktop: a small corner readout that only appears when your heart is racing (H pins it on).
+        /// </summary>
         void FollowHead(Transform head)
         {
             if (heartPanel == null) return;
+            var rig = PlayerRig.Instance;
+            var lc = LevelController.Instance;
+            int lives = lc != null ? lc.Lives : LevelController.MaxLives;
+            if (lives != shownLives)
+            {
+                shownLives = lives;
+                UIFactory.SetHearts(lifeHearts, lives);
+            }
+
+            Transform wrist = rig != null && !rig.IsDesktop ? rig.LeftHand : null;
+            if (wrist != null)
+            {
+                heartPanel.localScale = heartBaseScale * 0.32f;
+                heartPanel.position = wrist.position - wrist.forward * 0.1f + wrist.up * 0.04f;
+                heartPanel.rotation = Quaternion.LookRotation(-wrist.up, wrist.forward);
+                heartGroup.alpha = SafeRoom.InSafeRoom ? 0f : 1f;
+                return;
+            }
+
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.hKey.wasPressedThisFrame)
+            {
+                heartPinned = !heartPinned;
+                HeadHud.Instance.ShowMessage(heartPinned ? "Heart rate: always shown (H)" : "Heart rate: only when it races (H)", 2f);
+            }
+            bool show = !SafeRoom.InSafeRoom && (heartPinned || panic || bpm >= 90f);
+            heartGroup.alpha = Mathf.MoveTowards(heartGroup.alpha, show ? 1f : 0f, Time.deltaTime * (show ? 3f : 0.8f));
+
+            heartPanel.localScale = heartBaseScale;
             Vector3 fwd = head.forward;
             Vector3 target = head.position + fwd * 1.2f - head.up * 0.42f + head.right * 0.42f;
             heartPanel.position = Vector3.Lerp(heartPanel.position, target, 1f - Mathf.Exp(-10f * Time.deltaTime));

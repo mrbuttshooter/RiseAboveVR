@@ -34,13 +34,37 @@ namespace AcrophobiaVR
             }
         }
 
+        /// <summary>Player-facing difficulty name (the enum keeps its original names for saves and logs).</summary>
+        public static string DisplayName(ExposureMode mode)
+        {
+            switch (mode)
+            {
+                case ExposureMode.Gentle: return "Easy";
+                case ExposureMode.Brave: return "Hard";
+                default: return "Normal";
+            }
+        }
+
         public static string Describe(ExposureMode mode)
         {
             switch (mode)
             {
-                case ExposureMode.Gentle: return "Gentle: safety glass, extra handrails and soft fog below.";
-                case ExposureMode.Brave: return "Brave: no extra helpers, crystal-clear air, stronger wind.";
-                default: return "Standard: normal railings and a clear view of the drop.";
+                case ExposureMode.Gentle: return "Easy: railings, safety glass and soft fog hide the drop.";
+                case ExposureMode.Brave: return "Hard: no railings, narrower paths, crystal-clear air, stronger wind.";
+                default: return "Normal: no railings - one wrong step and you fall. 3 lives.";
+            }
+        }
+
+        const string TrackKey = "acro_track_anxiety";
+
+        /// <summary>Optional "anxiety tracking" (0-10 rating before and after each level, for research/demo). Off by default.</summary>
+        public static bool TrackAnxiety
+        {
+            get => PlayerPrefs.GetInt(TrackKey, 0) == 1;
+            set
+            {
+                PlayerPrefs.SetInt(TrackKey, value ? 1 : 0);
+                PlayerPrefs.Save();
             }
         }
 

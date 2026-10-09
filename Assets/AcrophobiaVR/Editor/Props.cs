@@ -193,7 +193,8 @@ namespace AcrophobiaVR.EditorTools
             var g = Anchor("StreetLamp", parent, basePos, yaw);
             var metal = LampMetal;
             Cyl("Base", g, Vector3.zero, 0.14f, 0.4f, metal, true, true);
-            Cyl("Pole", g, new Vector3(0f, 0.4f, 0f), 0.065f, 4.6f, metal, true, true);
+            // No collider on the pole: a player falling off a balcony must not end up balanced on top of it.
+            Cyl("Pole", g, new Vector3(0f, 0.4f, 0f), 0.065f, 4.6f, metal, false, true);
             Sphere("Cap", g, new Vector3(0f, 5.0f, 0f), 0.15f, metal, false, true);
             Bar("ArmA", g, new Vector3(0f, 4.82f, 0f), new Vector3(0f, 5.16f, 0.45f), 0.07f, metal, false, true);
             Bar("ArmB", g, new Vector3(0f, 5.16f, 0.45f), new Vector3(0f, 5.12f, 1.35f), 0.07f, metal, false, true);

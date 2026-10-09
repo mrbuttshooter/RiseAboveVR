@@ -30,8 +30,8 @@ namespace AcrophobiaVR
         public static readonly string[] LevelDescriptions =
         {
             "Walk on glass, rescue a parrot on a ledge, climb to the roof.",
-            "Ride an open lift, cross planks, climb the crane.",
-            "Cross a beam between towers and rescue a cat.",
+            "Ride an open lift, outsmart a loose board, plant a flag on a crane.",
+            "A beam, crumbling tiles, a broken rope bridge - and a helicopter.",
         };
 
         const string UnlockKey = "acro_highest_unlocked";

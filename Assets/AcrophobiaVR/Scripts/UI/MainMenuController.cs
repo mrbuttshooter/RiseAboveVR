@@ -48,15 +48,18 @@ namespace AcrophobiaVR
             var root = canvas.transform;
             UIFactory.FullPanel(root, new Color(0.06f, 0.1f, 0.16f, 0.95f));
             UIFactory.Label(root, "RISE ABOVE", 130, new Vector2(0, 470), new Vector2(1650, 150), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
-            UIFactory.Label(root, "Overcome the fear of heights - one step at a time", 46, new Vector2(0, 375), new Vector2(1650, 64), TextAnchor.MiddleCenter, Dim);
+            UIFactory.Label(root, "A sky-high adventure - no railings, three lives", 46, new Vector2(0, 375), new Vector2(1650, 64), TextAnchor.MiddleCenter, Dim);
             // Top-right, clear of the ~900 px wide centred title text.
             UIFactory.Button(root, "My Progress", new Vector2(640, 470), new Vector2(300, 80), UIFactory.Accent * 0.75f, ProgressReport.Show, 36);
+            // Optional research feature: a 0-10 anxiety rating before and after each level (off = straight into the action).
+            trackButton = UIFactory.Button(root, "", new Vector2(-640, 470), new Vector2(300, 80), UIFactory.ButtonColor, ToggleTracking, 30);
+            RefreshTracking();
 
             for (int i = 0; i < GameManager.LevelScenes.Length; i++)
                 BuildLevelCard(root, i, new Vector2((i - 1) * 555, 70));
 
-            UIFactory.Label(root, "Exposure:", 46, new Vector2(-670, -300), new Vector2(300, 70), TextAnchor.MiddleLeft, UIFactory.Accent, FontStyle.Bold);
-            string[] names = { "Gentle", "Standard", "Brave" };
+            UIFactory.Label(root, "Difficulty:", 46, new Vector2(-670, -300), new Vector2(300, 70), TextAnchor.MiddleLeft, UIFactory.Accent, FontStyle.Bold);
+            string[] names = { ExposureSettings.DisplayName(ExposureMode.Gentle), ExposureSettings.DisplayName(ExposureMode.Standard), ExposureSettings.DisplayName(ExposureMode.Brave) };
             for (int m = 0; m < 3; m++)
             {
                 int mode = m;
@@ -78,7 +81,7 @@ namespace AcrophobiaVR
             UIFactory.Button(root, "+", new Vector2(752, -395), new Vector2(70, 70), UIFactory.ButtonColor, () => ChangeVolume(0.1f), 44);
             RefreshVolume();
 
-            UIFactory.Label(root, "Feeling too much? Press X (or Esc) anytime for the Calm Meadow.", 34, new Vector2(0, -490), new Vector2(1650, 56), TextAnchor.MiddleCenter, UIFactory.Calm);
+            UIFactory.Label(root, "In a level:  Esc / X = pause menu     C / crouch = hold on in the wind     H = heart rate", 34, new Vector2(0, -490), new Vector2(1650, 56), TextAnchor.MiddleCenter, UIFactory.Calm);
         }
 
         void BuildLevelCard(Transform root, int i, Vector2 pos)
@@ -94,10 +97,30 @@ namespace AcrophobiaVR
             UIFactory.Label(t, GameManager.LevelDescriptions[i], 32, new Vector2(0, 0), new Vector2(480, 100), TextAnchor.MiddleCenter, Dim);
             UIFactory.StarRow(t, ProgressStore.GetStars(i), 3, new Vector2(0, -85), 58f);
             float best = ProgressStore.GetBestTime(i);
-            UIFactory.Label(t, best > 0 ? "Best " + LevelController.FormatTime(best) : " ", 30, new Vector2(0, -140), new Vector2(500, 44), TextAnchor.MiddleCenter, Dim);
+            int bestScore = PlayerPrefs.GetInt("acro_best_score_" + i, 0);
+            UIFactory.Label(t, best > 0 ? "Best " + LevelController.FormatTime(best) + (bestScore > 0 ? "   " + bestScore.ToString("N0") + " pts" : "") : " ", 30, new Vector2(0, -140), new Vector2(500, 44), TextAnchor.MiddleCenter, Dim);
             var b = UIFactory.Button(t, unlocked ? "PLAY" : "LOCKED", new Vector2(0, -205), new Vector2(320, 90),
                 unlocked ? UIFactory.Calm * 0.8f : new Color(0.32f, 0.32f, 0.32f), unlocked ? () => GameManager.Instance.LoadLevel(i) : (UnityEngine.Events.UnityAction)null, 46);
             b.interactable = unlocked;
+        }
+
+        UnityEngine.UI.Button trackButton;
+
+        void ToggleTracking()
+        {
+            ExposureSettings.TrackAnxiety = !ExposureSettings.TrackAnxiety;
+            RefreshTracking();
+            Companion.Say(ExposureSettings.TrackAnxiety
+                ? "Anxiety log on: you'll rate how you feel (0-10) before and after each level - it shows up in My Progress."
+                : "Anxiety log off: levels start straight away with a countdown.", 4f);
+        }
+
+        void RefreshTracking()
+        {
+            if (trackButton == null) return;
+            var label = trackButton.GetComponentInChildren<TMPro.TMP_Text>();
+            if (label != null) label.text = ExposureSettings.TrackAnxiety ? "Anxiety log: ON" : "Anxiety log: OFF";
+            trackButton.GetComponent<Image>().color = ExposureSettings.TrackAnxiety ? UIFactory.Calm * 0.75f : UIFactory.ButtonColor;
         }
 
         void SetMode(ExposureMode mode)

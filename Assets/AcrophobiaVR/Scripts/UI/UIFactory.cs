@@ -266,6 +266,64 @@ namespace AcrophobiaVR
             return inside;
         }
 
+        static Sprite heart;
+
+        /// <summary>Procedurally drawn, anti-aliased heart sprite (lives).</summary>
+        public static Sprite Heart
+        {
+            get
+            {
+                if (heart != null) return heart;
+                const int size = 128;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    int inside = 0;
+                    for (int sy = 0; sy < 4; sy++)
+                    for (int sx = 0; sx < 4; sx++)
+                    {
+                        // Classic implicit heart curve: (x^2 + y^2 - 1)^3 - x^2 y^3 <= 0
+                        float u = ((x + (sx + 0.5f) / 4f) / size - 0.5f) * 2.6f;
+                        float v = ((y + (sy + 0.5f) / 4f) / size - 0.45f) * 2.6f;
+                        float a = u * u + v * v - 1f;
+                        if (a * a * a - u * u * v * v * v <= 0f) inside++;
+                    }
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, inside / 16f));
+                }
+                tex.Apply();
+                heart = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+                return heart;
+            }
+        }
+
+        public static readonly Color HeartRed = new Color(1f, 0.3f, 0.36f);
+
+        /// <summary>A row of red (remaining) and dim (lost) hearts. Returns the images so callers can refresh them.</summary>
+        public static Image[] HeartRow(Transform parent, int count, int max, Vector2 center, float size)
+        {
+            var row = new Image[max];
+            for (int i = 0; i < max; i++)
+            {
+                var img = new GameObject("Heart", typeof(RectTransform)).AddComponent<Image>();
+                img.transform.SetParent(parent, false);
+                img.sprite = Heart;
+                img.raycastTarget = false;
+                img.rectTransform.anchoredPosition = center + new Vector2((i - (max - 1) * 0.5f) * size * 1.15f, 0f);
+                img.rectTransform.sizeDelta = new Vector2(size, size);
+                row[i] = img;
+            }
+            SetHearts(row, count);
+            return row;
+        }
+
+        public static void SetHearts(Image[] row, int count)
+        {
+            if (row == null) return;
+            for (int i = 0; i < row.Length; i++)
+                if (row[i] != null) row[i].color = i < count ? HeartRed : new Color(1f, 1f, 1f, 0.2f);
+        }
+
         /// <summary>A row of gold (earned) and dim (missing) star icons.</summary>
         public static void StarRow(Transform parent, int count, int max, Vector2 center, float size)
         {

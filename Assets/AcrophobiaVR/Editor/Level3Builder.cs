@@ -65,17 +65,21 @@ namespace AcrophobiaVR.EditorTools
             }
             foreach (var cx in new[] { 0f, 50f })
             {
-                // Parapets with gaps where the crossings start
-                Box("ParapetS", towers, new Vector3(cx, H + 0.25f, -8f), new Vector3(16f, 0.5f, 0.3f), concrete);
-                Box("ParapetN1", towers, new Vector3(cx - 4.5f, H + 0.25f, 8f), new Vector3(7f, 0.5f, 0.3f), concrete);
-                Box("ParapetN2", towers, new Vector3(cx + 4.5f, H + 0.25f, 8f), new Vector3(7f, 0.5f, 0.3f), concrete);
+                // Parapets with gaps where the crossings start (Easy only - otherwise just a kerb and 150 m of air)
+                ShowIn(Box("ParapetS", towers, new Vector3(cx, H + 0.25f, -8f), new Vector3(16f, 0.5f, 0.3f), concrete), true, false, false);
+                ShowIn(Box("ParapetN1", towers, new Vector3(cx - 4.5f, H + 0.25f, 8f), new Vector3(7f, 0.5f, 0.3f), concrete), true, false, false);
+                ShowIn(Box("ParapetN2", towers, new Vector3(cx + 4.5f, H + 0.25f, 8f), new Vector3(7f, 0.5f, 0.3f), concrete), true, false, false);
+                Kerb("KerbS", towers, new Vector3(cx - 8f, H, -7.95f), new Vector3(cx + 8f, H, -7.95f), concrete);
+                Kerb("KerbN", towers, new Vector3(cx - 8f, H, 7.95f), new Vector3(cx + 8f, H, 7.95f), concrete);
+                Kerb("KerbW", towers, new Vector3(cx - 7.95f, H, -8f), new Vector3(cx - 7.95f, H, 8f), concrete);
+                Kerb("KerbE", towers, new Vector3(cx + 7.95f, H, -8f), new Vector3(cx + 7.95f, H, 8f), concrete);
             }
-            Box("ParapetA_W", towers, new Vector3(-8f, H + 0.25f, 0), new Vector3(0.3f, 0.5f, 16f), concrete);
-            Box("ParapetA_E1", towers, new Vector3(8f, H + 0.25f, -4.5f), new Vector3(0.3f, 0.5f, 7f), concrete);
-            Box("ParapetA_E2", towers, new Vector3(8f, H + 0.25f, 4.5f), new Vector3(0.3f, 0.5f, 7f), concrete);
-            Box("ParapetB_E", towers, new Vector3(58f, H + 0.25f, 0), new Vector3(0.3f, 0.5f, 16f), concrete);
-            Box("ParapetB_W1", towers, new Vector3(42f, H + 0.25f, -4.5f), new Vector3(0.3f, 0.5f, 7f), concrete);
-            Box("ParapetB_W2", towers, new Vector3(42f, H + 0.25f, 4.5f), new Vector3(0.3f, 0.5f, 7f), concrete);
+            ShowIn(Box("ParapetA_W", towers, new Vector3(-8f, H + 0.25f, 0), new Vector3(0.3f, 0.5f, 16f), concrete), true, false, false);
+            ShowIn(Box("ParapetA_E1", towers, new Vector3(8f, H + 0.25f, -4.5f), new Vector3(0.3f, 0.5f, 7f), concrete), true, false, false);
+            ShowIn(Box("ParapetA_E2", towers, new Vector3(8f, H + 0.25f, 4.5f), new Vector3(0.3f, 0.5f, 7f), concrete), true, false, false);
+            ShowIn(Box("ParapetB_E", towers, new Vector3(58f, H + 0.25f, 0), new Vector3(0.3f, 0.5f, 16f), concrete), true, false, false);
+            ShowIn(Box("ParapetB_W1", towers, new Vector3(42f, H + 0.25f, -4.5f), new Vector3(0.3f, 0.5f, 7f), concrete), true, false, false);
+            ShowIn(Box("ParapetB_W2", towers, new Vector3(42f, H + 0.25f, 4.5f), new Vector3(0.3f, 0.5f, 7f), concrete), true, false, false);
             // Gentle-mode glass fence around both roofs
             SafetyGlass("FenceA_S", towers, new Vector3(-8, H, -8), new Vector3(8, H, -8), 1.3f, glass);
             SafetyGlass("FenceA_W", towers, new Vector3(-8, H, -8), new Vector3(-8, H, 8), 1.3f, glass);
@@ -94,7 +98,7 @@ namespace AcrophobiaVR.EditorTools
 
             // Section 1: steel beam A -> window-cleaning cradle (variants by exposure mode)
             BuildBeam(game, "Beam Gentle", 0.6f, steel, rope, netMat, true, false, false, 2, true);
-            BuildBeam(game, "Beam Standard", 0.36f, steel, rope, netMat, false, true, false, 1, false);
+            BuildBeam(game, "Beam Standard", 0.36f, steel, rope, netMat, false, true, false, 0, false);
             BuildBeam(game, "Beam Brave", 0.3f, steel, rope, netMat, false, false, true, 0, false);
 
             var cradle = Group("WindowCradle", env).transform;
@@ -106,8 +110,7 @@ namespace AcrophobiaVR.EditorTools
             var cpCradle = Zone<CheckpointZone>("CP Cradle", game, new Vector3(21.5f, H + 1.2f, 0), new Vector3(2.8f, 2.4f, 2.8f));
             cpCradle.label = "Window cradle";
             cpCradle.respawnPoint = Point("CP Cradle Spawn", game, new Vector3(21.2f, H, 0), 90f);
-            cpCradle.offerBreathingBreak = true;
-            cpCradle.companionLine = "Halfway! You're standing in the sky. Let's breathe here for a moment.";
+            cpCradle.companionLine = "Halfway! Checkpoint saved. Next up: tiles that crumble under your feet.";
             var reachCradle = Zone<ReachObjective>("ReachCradle", game, new Vector3(21.5f, H + 1.2f, 0), new Vector3(2.8f, 2.4f, 2.8f));
             reachCradle.description = "Cross the steel beam to the window cradle";
 
@@ -134,7 +137,20 @@ namespace AcrophobiaVR.EditorTools
                 float t = (i + 0.5f) / planks;
                 float x = Mathf.Lerp(bx0, bx1, t);
                 float y = H - Mathf.Sin(t * Mathf.PI) * 0.55f;
+                bool broken = i == 7 || i == 13 || i == 19 || i == 23;
                 var p = Box("Plank", bridge, new Vector3(x, y - 0.03f, 0), new Vector3(0.36f, 0.06f, 0.95f), plankMat, true, false);
+                if (broken)
+                {
+                    // On Normal / Hard this plank has snapped in half - only the left half is left to step on.
+                    ShowIn(p, true, false, false);
+                    var half = Box("BrokenPlank", bridge, new Vector3(x, y - 0.03f, -0.235f), new Vector3(0.36f, 0.06f, 0.48f), plankMat, true, false);
+                    half.transform.localRotation = Quaternion.Euler(0f, 0f, 4f);
+                    ShowIn(half, false, true, true);
+                    var halfSpin = half.AddComponent<Spinner>();
+                    halfSpin.oscillate = true;
+                    halfSpin.degreesPerSecond = new Vector3(100f, 0, 0);
+                    halfSpin.oscillateAmplitude = 4f;
+                }
                 var sp = p.AddComponent<Spinner>();
                 sp.oscillate = true;
                 sp.degreesPerSecond = new Vector3(100f, 0, 0);
@@ -147,7 +163,8 @@ namespace AcrophobiaVR.EditorTools
                 {
                     float t = s / 12f;
                     Vector3 cur = new Vector3(Mathf.Lerp(bx0, bx1, t), H + 1f - Mathf.Sin(t * Mathf.PI) * 0.45f, side * 0.55f);
-                    Bar("HandRope", bridge, prev, cur, 0.035f, rope, false, false);
+                    // The right-hand rope has snapped on Normal; on Hard both are gone.
+                    ShowIn(Bar("HandRope", bridge, prev, cur, 0.035f, rope, false, false), true, side < 0, false);
                     prev = cur;
                 }
                 Bar("Post", bridge, new Vector3(bx0, H, side * 0.55f), new Vector3(bx0, H + 1.1f, side * 0.55f), 0.1f, steelDark);
@@ -166,6 +183,47 @@ namespace AcrophobiaVR.EditorTools
             var cpB = Zone<CheckpointZone>("CP TowerB", game, new Vector3(46f, H + 1.2f, 0), new Vector3(6f, 2.4f, 10f));
             cpB.label = "Tower B roof";
             cpB.respawnPoint = Point("CP TowerB Spawn", game, new Vector3(45f, H, 0), 90f);
+
+            // A helicopter thunders past while you're in the middle of the rope bridge - crouch for the downdraft!
+            var heli = Group("Helicopter", env);
+            var heliBody = Group("Body", heli.transform).transform;
+            var heliRed = Mat("HeliRed", new Color(0.75f, 0.12f, 0.1f), 0.7f, 0.3f);
+            var heliDark = Mat("HeliDark", new Color(0.08f, 0.08f, 0.09f), 0.5f, 0.6f);
+            Prim(PrimitiveType.Capsule, "Cabin", heliBody, Vector3.zero, new Vector3(1.7f, 1.9f, 1.7f), heliRed, false, false, new Vector3(90f, 0f, 0f));
+            Sphere("Canopy", heliBody, new Vector3(0f, 0.15f, 1.35f), 1.5f, Mat("HeliGlass", new Color(0.15f, 0.22f, 0.3f), 0.95f, 0.2f), false, false);
+            Box("TailBoom", heliBody, new Vector3(0f, 0.35f, -3.4f), new Vector3(0.35f, 0.35f, 4.2f), heliRed, false, false);
+            Box("TailFin", heliBody, new Vector3(0f, 1.0f, -5.35f), new Vector3(0.12f, 1.3f, 0.8f), heliRed, false, false);
+            foreach (var sx in new[] { -0.85f, 0.85f })
+            {
+                Box("Skid", heliBody, new Vector3(sx, -1.25f, 0.2f), new Vector3(0.09f, 0.09f, 3.4f), heliDark, false, false);
+                Bar("Strut", heliBody, new Vector3(sx, -1.25f, 0.9f), new Vector3(sx * 0.6f, -0.7f, 0.9f), 0.07f, heliDark, false, false);
+                Bar("Strut", heliBody, new Vector3(sx, -1.25f, -0.5f), new Vector3(sx * 0.6f, -0.7f, -0.5f), 0.07f, heliDark, false, false);
+            }
+            var mainRotor = Group("MainRotor", heliBody).transform;
+            mainRotor.localPosition = new Vector3(0f, 1.15f, 0.2f);
+            Cyl("Hub", mainRotor, new Vector3(0f, -0.15f, 0f), 0.18f, 0.3f, heliDark, false, false);
+            Box("BladeA", mainRotor, Vector3.zero, new Vector3(10f, 0.04f, 0.32f), heliDark, false, false);
+            Box("BladeB", mainRotor, Vector3.zero, new Vector3(0.32f, 0.04f, 10f), heliDark, false, false);
+            mainRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(0f, 1100f, 0f);
+            var tailRotor = Group("TailRotor", heliBody).transform;
+            tailRotor.localPosition = new Vector3(0.12f, 1.0f, -5.5f);
+            Box("TailBlade", tailRotor, Vector3.zero, new Vector3(0.04f, 1.5f, 0.14f), heliDark, false, false);
+            tailRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(1600f, 0f, 0f);
+            Sphere("Beacon", heliBody, new Vector3(0f, 0.95f, -1.6f), 0.18f, Glow("BeaconRed", new Color(1f, 0.2f, 0.15f), 4f), false, false);
+            var heliEngine = Group("Engine", heliBody).AddComponent<SoundEmitter>();
+            heliEngine.kind = EmitterKind.Rotor;
+            heliEngine.volume = 1f;
+            var flyBy = heli.AddComponent<FlyBy>();
+            flyBy.path = new[]
+            {
+                new Vector3(-60f, H + 30f, -90f),
+                new Vector3(25f, H + 9f, -16f),
+                new Vector3(46f, H + 11f, 16f),
+                new Vector3(140f, H + 40f, 110f),
+            };
+            flyBy.triggerPoint = new Vector3(35f, H + 1.3f, 0f);
+            flyBy.triggerRadius = 2.6f;
+            flyBy.washRadius = 30f;
 
             // The stranded cat at the end of a plank sticking out from Tower B
             var catPlank = Group("CatPlank", game).transform;
@@ -266,7 +324,7 @@ namespace AcrophobiaVR.EditorTools
             lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(2.5f, H + 1.8f, -3.2f), new Vector3(0, H + 1.6f, 0));
             lc.introLines = new[]
             {
-                "Welcome to the top of the city. One hundred and fifty metres. Take a moment... just look at that view.",
+                "Welcome to the top of the city. One hundred and fifty metres - and not a single railing. Three lives. Let's go!",
                 "Mittens the cat is stuck on the tower across the gap. We're going to cross over and rescue her.",
                 "The wind is strong up here. When I warn you about a gust - crouch down low until it passes!",
             };

@@ -88,11 +88,16 @@ namespace AcrophobiaVR.EditorTools
             var roof = Group("RoofTerrace", env).transform;
             Floor("RoofFloor", roof, -10f, 10f, 0f, 14f, RoofY + 0.05f, 0.3f, Mat("RoofGravel", new Color(0.55f, 0.55f, 0.55f)), true);
             var parapetMat = Mat("Concrete", new Color(0.7f, 0.7f, 0.68f));
-            Box("ParapetFrontL", roof, new Vector3(-8.45f, RoofY + 0.25f, 0.15f), new Vector3(3.1f, 0.45f, 0.3f), parapetMat);
-            Box("ParapetFrontR", roof, new Vector3(2.15f, RoofY + 0.25f, 0.15f), new Vector3(15.7f, 0.45f, 0.3f), parapetMat);
-            Box("ParapetBack", roof, new Vector3(0f, RoofY + 0.55f, 13.85f), new Vector3(20f, 1.0f, 0.3f), parapetMat);
-            Box("ParapetSideL", roof, new Vector3(-9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat);
-            Box("ParapetSideR", roof, new Vector3(9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat);
+            // Parapets only on Easy - on Normal / Hard the roof edge is a 10 cm kerb and a long drop.
+            ShowIn(Box("ParapetFrontL", roof, new Vector3(-8.45f, RoofY + 0.25f, 0.15f), new Vector3(3.1f, 0.45f, 0.3f), parapetMat), true, false, false);
+            ShowIn(Box("ParapetFrontR", roof, new Vector3(2.15f, RoofY + 0.25f, 0.15f), new Vector3(15.7f, 0.45f, 0.3f), parapetMat), true, false, false);
+            ShowIn(Box("ParapetBack", roof, new Vector3(0f, RoofY + 0.55f, 13.85f), new Vector3(20f, 1.0f, 0.3f), parapetMat), true, false, false);
+            ShowIn(Box("ParapetSideL", roof, new Vector3(-9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat), true, false, false);
+            ShowIn(Box("ParapetSideR", roof, new Vector3(9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat), true, false, false);
+            Kerb("KerbFront", roof, new Vector3(-10f, RoofY + 0.05f, 0.05f), new Vector3(10f, RoofY + 0.05f, 0.05f), parapetMat);
+            Kerb("KerbBack", roof, new Vector3(-10f, RoofY + 0.05f, 13.95f), new Vector3(10f, RoofY + 0.05f, 13.95f), parapetMat);
+            Kerb("KerbL", roof, new Vector3(-9.95f, RoofY + 0.05f, 0f), new Vector3(-9.95f, RoofY + 0.05f, 14f), parapetMat);
+            Kerb("KerbR", roof, new Vector3(9.95f, RoofY + 0.05f, 0f), new Vector3(9.95f, RoofY + 0.05f, 14f), parapetMat);
             SafetyGlass("RoofGlassL", roof, new Vector3(-10f, RoofY, 0.1f), new Vector3(-6.9f, RoofY, 0.1f), 1.2f, glass);
             SafetyGlass("RoofGlassR", roof, new Vector3(-5.7f, RoofY, 0.1f), new Vector3(10f, RoofY, 0.1f), 1.2f, glass);
             Cyl("WaterTank", roof, new Vector3(-6f, RoofY, 10f), 1.1f, 2.4f, Mat("TankWood", new Color(0.55f, 0.35f, 0.2f)));
@@ -106,6 +111,8 @@ namespace AcrophobiaVR.EditorTools
             var balcony = Group("Balcony", env).transform;
             Floor("BalconyFloor", balcony, -7f, 5f, -3f, 0f, B, 0.3f, wood, true);
             Box("BalconyTrim", balcony, new Vector3(-1, B - 0.4f, -3.02f), new Vector3(12.1f, 0.25f, 0.1f), trim, false);
+            Kerb("BalconyKerbFront", balcony, new Vector3(-7f, B, -2.95f), new Vector3(5f, B, -2.95f), trim);
+            Kerb("BalconyKerbL", balcony, new Vector3(-6.95f, B, -3f), new Vector3(-6.95f, B, 0f), trim);
             Railing("RailFrontLeft", balcony, new Vector3(-7f, B, -3f), new Vector3(-6f, B, -3f), 1.1f, metal);
             Railing("RailFrontRight", balcony, new Vector3(-4f, B, -3f), new Vector3(5f, B, -3f), 1.1f, metal);
             Railing("RailSideL", balcony, new Vector3(-7f, B, -3f), new Vector3(-7f, B, 0f), 1.1f, metal);
@@ -238,7 +245,21 @@ namespace AcrophobiaVR.EditorTools
             // ---- The window ledge: rescue Kiwi the parrot (narrow, 35 cm, street 6 m below)
             const float RoofTop = 13.05f;
             var ledgeRoot = Group("WindowLedge", game).transform;
-            BoxMinMax("Ledge", ledgeRoot, new Vector3(4.95f, B - 0.12f, -0.4f), new Vector3(10.2f, B, 0f), Mat("Stone", new Color(0.75f, 0.75f, 0.78f)), true, false);
+            // A chunk of the ledge has crumbled away: a 35 cm gap you step over with the street right below.
+            var ledgeStone = Mat("Stone", new Color(0.75f, 0.75f, 0.78f));
+            BoxMinMax("Ledge", ledgeRoot, new Vector3(4.95f, B - 0.12f, -0.4f), new Vector3(7.25f, B, 0f), ledgeStone, true, false);
+            BoxMinMax("Ledge2", ledgeRoot, new Vector3(7.6f, B - 0.12f, -0.4f), new Vector3(10.2f, B, 0f), ledgeStone, true, false);
+            BoxMinMax("LedgeRubble", ledgeRoot, new Vector3(7.25f, B - 0.12f, -0.12f), new Vector3(7.6f, B - 0.07f, 0f), ledgeStone, false, false);
+            Zone<SayZone>("GapHint", game, new Vector3(6.6f, B + 1.2f, -0.25f), new Vector3(0.6f, 2.4f, 0.8f)).line =
+                "Part of the ledge has crumbled away! Step over the gap - long stride, don't look down... or do.";
+            // Pigeons roost on the far half of the ledge - they burst out when you get close.
+            var pigeons = Group("Pigeons", game);
+            pigeons.transform.position = new Vector3(8.6f, B + 0.02f, -0.18f);
+            pigeons.transform.rotation = Quaternion.Euler(0, -90, 0);
+            var startle = pigeons.AddComponent<StartleBirds>();
+            startle.fleeDirection = new Vector3(0.4f, 0f, -1f);
+            startle.bodyMaterial = Mat("PigeonGrey", new Color(0.55f, 0.57f, 0.62f), 0.35f);
+            startle.wingMaterial = Mat("PigeonWing", new Color(0.42f, 0.44f, 0.5f), 0.3f);
             var ledgeBeam = ledgeRoot.gameObject.AddComponent<BalanceBeam>();
             ledgeBeam.start = Point("Start", ledgeRoot, new Vector3(5.0f, B, -0.2f));
             ledgeBeam.end = Point("End", ledgeRoot, new Vector3(10.0f, B, -0.2f));
@@ -284,6 +305,14 @@ namespace AcrophobiaVR.EditorTools
             var cpRoof = Zone<CheckpointZone>("CP Roof", game, new Vector3(-4f, RoofTop + 1.2f, 3f), new Vector3(8f, 2.4f, 5f));
             cpRoof.label = "Roof terrace (13 m)";
             cpRoof.respawnPoint = Point("CP Roof Spawn", game, new Vector3(-5f, RoofTop, 2.5f), 180f);
+            // Wind on the roof: gusts shove you towards the street. Crouch to hold on.
+            var roofWind = Group("RoofWind", game).AddComponent<GustZone>();
+            // Covers the roof right up to the street edge, except the strip by the ladder where you arrive.
+            roofWind.transform.position = new Vector3(2.75f, RoofTop + 1.5f, 6.5f);
+            roofWind.size = new Vector3(14.5f, 4f, 13f);
+            roofWind.pushDirection = new Vector3(0f, 0f, -1f);
+            roofWind.interval = new Vector2(8f, 13f);
+            roofWind.pushSpeed = 1.1f;
 
             // ---- Rooftop bell: the finale
             // A small bell frame (two posts and a beam) so the bell is visible from every side and swings from its pivot.
@@ -317,7 +346,7 @@ namespace AcrophobiaVR.EditorTools
             {
                 "Welcome to the Sunset Cafe! We start on the balcony, six metres up - and we'll finish on the roof at thirteen.",
                 "Kiwi, the cafe's parrot, has escaped onto the window ledge. We'll need your help to get her back.",
-                "Your tasks are on the board behind you. Remember: press X, or Esc, anytime to visit the Calm Meadow.",
+                "No railings out here, and you've got three lives. Your tasks are on the board behind you - press Esc or X to pause.",
             };
             lc.finishLine = "Ding ding! Level one complete - a ledge, a ladder and a rooftop. That was brave!";
             Save(scene, GameManager.LevelScenes[0]);

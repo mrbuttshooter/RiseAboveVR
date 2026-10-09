@@ -20,7 +20,7 @@ namespace AcrophobiaVR
 
         AudioSource[] voices;
         int nextVoice;
-        AudioClip click, chime, success, fanfare, crack, shatter, whoosh, clunk, chirp, meow, boom;
+        AudioClip click, chime, success, fanfare, crack, shatter, whoosh, clunk, chirp, meow, boom, flutter;
 
         // Pooled 3D voices (least-recently-used free source, else steal the oldest).
         AudioSource[] spatial;
@@ -96,6 +96,8 @@ namespace AcrophobiaVR
                 return v * Env(t, 0.05f, 0.75f) * 0.22f;
             });
             boom = Synth(1.8f, (t, n) => (n * 0.8f + Mathf.Sin(2 * Mathf.PI * 55 * t) * 0.6f) * Env(t, 0.003f, 1.4f) * 0.7f);
+            // Pigeons taking off: sharp wing-clap noise bursts (~13 per second) that fade as the flock leaves.
+            flutter = Synth(1.5f, (t, n) => n * Mathf.Exp(-Mathf.Repeat(t * (12.5f + 2f * Mathf.Sin(t * 7f)), 1f) * 16f) * Mathf.Clamp01(1.5f - t) * 0.75f);
 
             // New clips (~6.8 s of samples in total).
             creaks = new[]
@@ -397,6 +399,7 @@ namespace AcrophobiaVR
         public static void PlayBoomAt(Vector3 position) => PlayAt(Get().boom, position, 1f, Random.Range(0.8f, 1.2f), 25f, 500f);
         public static void PlayChirpAt(Vector3 position) => PlayAt(Get().chirp, position, 0.7f, Random.Range(0.95f, 1.15f), 1.5f, 40f);
         public static void PlayBellAt(Vector3 position) => PlayAt(Get().chime, position, 1f, Random.Range(0.48f, 0.52f), 3f, 150f);
+        public static void PlayFlutterAt(Vector3 position) => PlayAt(Get().flutter, position, 1f, Random.Range(0.9f, 1.15f), 1.5f, 30f);
 
         /// <summary>Wood/rope creak or groan. Higher intensity = louder and lower-pitched.</summary>
         public static void PlayCreakAt(Vector3 position, float intensity01)

@@ -1,28 +1,24 @@
-# Rise Above - a VR game for overcoming the fear of heights
+# Rise Above - a sky-high VR adventure
 
-End-of-year project. A three-level virtual-reality experience built in Unity 6 that uses
-**graded exposure** - the technique psychologists use to treat acrophobia (fear of heights) -
-wrapped in a friendly, game-like journey with a companion, tasks, stars and a safe place to retreat to.
+End-of-year project. A three-level virtual-reality game built in Unity 6 for **Meta Quest** (and playable on a
+normal PC without a headset). It's a fun, tense game about heights: no railings, real falls, three lives,
+tasks, puzzles, wind, a companion and stars to collect. Fear of heights is the *theme* - the game simulates what
+vertigo feels like from inside your head - but the goal is a game that's fun to play and to watch.
 
-## The idea
+## How it plays
 
-People with acrophobia avoid heights, so the fear never gets a chance to fade. Exposure therapy
-does the opposite: the person faces a height that is *a little* scary, stays until the anxiety
-drops, then moves a step higher. VR is ideal for this because the height feels real while the
-person is actually standing safely on the floor.
-
-Rise Above turns those principles into game design:
-
-| Therapy principle | How the game does it |
+| Feature | What it means in the game |
 |---|---|
-| Graded hierarchy (low -> high) | 3 levels: 6-13 m cafe balcony & roof -> 25-31 m construction site -> 150 m skyscraper. Levels unlock in order. |
-| Measuring anxiety (SUDS 0-10) | Before and after every level the player rates their anxiety. Results go to a CSV log and the trophy-wall graph. |
-| Approach, don't avoid | Tasks require looking down, leaning over railings, walking on glass, crossing beams. |
-| Feeling in control | **Calm Meadow** escape at any moment (X button / Esc) and back to the checkpoint when ready. |
-| Adjustable intensity | **Exposure modes**: Gentle (safety glass, extra rails, wider beams, fog hides the drop), Standard, Brave (no helpers, clear air, stronger wind). Game suggests Gentle if the starting rating is 8+. |
-| Coping skills | Guided slow breathing (in 4 s, hold 4 s, out 6 s) at the start and at checkpoints. |
-| Encouragement | **Pip**, a little glowing bird-drone companion who explains tasks and reassures the player. |
-| No punishment | Slipping fades gently back to the last checkpoint - no falling animation. |
+| Three levels, rising | 6-13 m cafe balcony & roof -> 25-31 m construction site -> 150 m skyscraper. Levels unlock in order. |
+| No railings | On **Normal** and **Hard** every edge is open - one wrong step and you really fall (a second of rushing air, then the screen goes dark). |
+| 3 lives | Each fall costs a heart and returns you to the last checkpoint. Lose all three = game over, try again. |
+| Hazards | Wind gusts that shove you (crouch to hold on), crumbling tiles, cracking glass, a loose see-saw board, startled pigeons, a helicopter's downdraft. |
+| Tasks & puzzles | Water flowers over the edge, rescue a parrot and a cat, weigh down a loose board, plant a flag on a crane, ring a rooftop bell. |
+| Score & stars | Points for tasks, courage stars, lives left and speed (x1.5 on Hard). Best score per level. 3 stars: finish, no falls, all courage stars. |
+| Difficulty | **Easy** (railings, safety glass, fog hides the drop), **Normal** (no railings), **Hard** (narrower paths, stronger wind, clear air). |
+| Pause menu | **Esc** / **X** / Menu button: Resume, Calm Meadow, Restart level, Main menu. |
+| Pip | A little glowing bird who flies in to explain things (and to help in a panic), then flies off - no HUD clutter. |
+| Optional anxiety log | Off by default. Turn it on in the main menu to rate anxiety 0-10 before/after each level (for demos/research). |
 
 ## Feeling the fear - the player's point of view
 
@@ -81,7 +77,7 @@ post-processing and probes switch off automatically (`PlatformGraphics`).
    - with ADB: `adb install -r E:\Unity_project\Builds\Quest\RiseAboveVR.apk`
      (ADB ships with Unity: `E:\UnityEditors\6000.3.25f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`).
 4. In the headset: **Library > Unknown Sources > Rise Above VR**.
-5. Play standing in a cleared guardian area (room-scale) - or seated. Left **X** = Calm Meadow at any time.
+5. Play standing in a cleared guardian area (room-scale) - or seated. Left **X** = pause menu at any time.
 
 Settings used for Quest: IL2CPP + ARM64, Vulkan, ASTC textures, min Android API 32 (Quest 2 / Pro / 3 / 3S),
 OpenXR single-pass instanced (multiview), foveated rendering, Meta Quest Support + Touch controller profiles, the
@@ -105,30 +101,35 @@ All audio is synthesised in code (no audio files) and placed in 3D space:
 
 ## The levels
 
-**Park hub (main menu)** - level portals, exposure-mode picker, trophy wall with before/after anxiety bars, help board.
+**Park hub (main menu)** - level portals, difficulty picker, best times and scores, trophy wall, help board.
 
 **Level 1 - The Sunset Cafe (6 m balcony -> 13 m roof)**
-- Water three flowers on a shelf *outside* the railing (grab the can by its handle, tilt to pour)
+- Water three flowers on a shelf hanging over the street (grab the can by its handle, tilt to pour)
 - Look down and find the street musician, the fountain and a dog on a walk (hold your gaze)
 - Walk the glass skywalk - the glass cracks while you stand on it, so keep moving
-- Rescue Kiwi the parrot from a 40 cm window ledge outside the railing (balance meter; a handrail appears only in Gentle mode)
-- Climb the fire-escape ladder to the roof terrace at 13 m - more than double the starting height
-- Ring the bell on the roof to finish (the roof edge has only a knee-high parapet)
+- Rescue Kiwi the parrot from a 40 cm window ledge: step over a crumbled gap while pigeons burst out at you
+- Climb the fire-escape ladder to the roof terrace at 13 m - no parapet, and gusts push you towards the street
+- Ring the bell on the roof to finish
 
 **Level 2 - Construction site (25-31 m)**
-- Ride an open lift that *stalls halfway* (Pip talks you through it)
-- Collect 3 lost tools - one is at the end of a diving-board plank
+- Ride an open lift with no rails that *stalls halfway*
+- The hammer sits at the end of a **loose board** sticking out over the edge: walk out on it and it see-saws and
+  tips you off - weigh down the inner end with the cement bag first
+- Gusts sweep the open roof, collect the other tools near the edges
 - Cross a wobbling plank bridge (balance meter), climb a ladder hand-over-hand
 - Walk the crane catwalk in the wind and plant the topping-out flag
 - Ride a steel beam hanging from the crane across to the next roof
 
 **Level 3 - Skyscraper (150 m)**
+- No parapets - just a kerb and 150 m of air
 - Cross a steel beam between towers while wind gusts hit - crouch to resist
 - Run over loose tiles that crumble a moment after you step on them
-- Cross a swaying rope bridge, walk a plank to rescue Mittens the cat
-- Launch the fireworks finale over the city
+- Cross a swaying rope bridge with a snapped hand rope and broken planks - and a **helicopter** thunders past
+  mid-crossing; crouch or its downdraft knocks you off
+- Walk a plank to rescue Mittens the cat, then launch the fireworks finale
 
-**Stars** per level: finish (1) + no slips (1) + all Courage Stars (1). Courage Stars float at the scariest spots.
+**Stars** per level: finish (1) + no falls (1) + all Courage Stars (1). Courage Stars float at the scariest spots.
+**Score**: 500 per task, 250 per courage star, 400 per life left, plus a time bonus (x1.5 on Hard, x0.6 on Easy).
 
 ## Controls
 
@@ -140,7 +141,8 @@ All audio is synthesised in code (no audio files) and placed in 3D space:
 | Press UI | Trigger | Click |
 | Pour watering can | Tilt it | Hold right mouse |
 | Crouch (wind) | Really crouch | C |
-| Calm Meadow | X (left controller) | Esc |
+| Pause menu (Resume / Calm Meadow / Restart / Main menu) | X or Menu (left controller) | Esc |
+| Heart rate | Look at your left wrist (watch, also shows lives) | Appears when it races; H = always show |
 | Free cursor | - | Tab (hold right mouse to look while free) |
 
 Desktop mode switches on automatically when no headset is detected (or start the build with `-desktop`),

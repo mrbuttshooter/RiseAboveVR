@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 namespace AcrophobiaVR
 {
     /// <summary>
-    /// The Calm Meadow: a ground-level pocket world the player can escape to at any moment
-    /// (left X button, or Esc on keyboard). Pressing again returns them to their checkpoint.
+    /// The Calm Meadow: a ground-level pocket world the player can escape to at any moment from the
+    /// pause menu (Esc / left X). Pressing Esc / X again returns them to their checkpoint.
     /// Having a guaranteed escape is key to making exposure feel safe.
     /// </summary>
     public class SafeRoom : MonoBehaviour
@@ -18,7 +18,6 @@ namespace AcrophobiaVR
         public Transform spawnPoint;
         public Transform panelPoint;
 
-        InputAction toggle;
         bool busy;
         float enteredAt;
         GameObject panel;
@@ -27,14 +26,7 @@ namespace AcrophobiaVR
         {
             Instance = this;
             InSafeRoom = false;
-            toggle = new InputAction("CalmMeadow", InputActionType.Button);
-            toggle.AddBinding("<XRController>{LeftHand}/primaryButton");
-            toggle.AddBinding("<Keyboard>/escape");
-            toggle.performed += _ => Toggle();
         }
-
-        void OnEnable() => toggle.Enable();
-        void OnDisable() => toggle.Disable();
 
         void Start()
         {

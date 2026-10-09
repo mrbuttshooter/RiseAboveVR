@@ -12,25 +12,25 @@ namespace AcrophobiaVR
 
         public static readonly string[] SlipLines =
         {
-            "Whoops! You're safe - back at the checkpoint. Take your time.",
-            "That's okay. Every climber slips. Let's try again, slowly.",
-            "Deep breath. Eyes on where you want to go, not on the drop.",
-            "Back on solid ground. You've got this.",
+            "Oof! Down you go - that's a heart gone. Back to the checkpoint!",
+            "The ground says hi! Shake it off and try again.",
+            "Whoa! Eyes on where you want to go, not on the drop.",
+            "Splat-free landing, thanks to me. Careful - hearts don't grow on trees!",
         };
 
         public static readonly string[] ReturnLines =
         {
-            "Welcome back. Small steps, steady breaths.",
+            "Welcome back! Let's finish this.",
             "Ready again? I'm right here with you.",
-            "Taking a break was smart. Let's keep going.",
+            "Recharged? Back to the heights!",
         };
 
         public static readonly string[] EncourageLines =
         {
-            "You're doing great. Notice your feet on solid ground.",
-            "Your body is safe. The fear will rise, and then it will pass.",
-            "Slow breath in... and out. Nice.",
-            "Look how far you've come!",
+            "Nice moves up here!",
+            "Courage stars hide at the scariest spots - have you found them all?",
+            "If I shout 'gust', crouch! Trust me on this one.",
+            "Heart racing? Look up at the sky for a second - it helps.",
         };
 
         public Transform body;
@@ -42,16 +42,38 @@ namespace AcrophobiaVR
         Vector3 bodyBaseScale = Vector3.one;
         float nextIdleLine;
 
+        float visibleUntil;
+        bool shown = true;
+        Renderer[] renderers;
+
         void Awake()
         {
             Instance = this;
             if (body != null) bodyBaseScale = body.localScale;
-            nextIdleLine = Time.time + 60f;
+            nextIdleLine = Time.time + 120f;
+            renderers = GetComponentsInChildren<Renderer>(true);
+        }
+
+        void Start()
+        {
+            // Pip waits out of sight until there is something to say.
+            var rig = PlayerRig.Instance;
+            if (rig != null) transform.position = rig.Head.position + Vector3.up * 5f;
+            SetShown(false);
+        }
+
+        void SetShown(bool on)
+        {
+            if (shown == on) return;
+            shown = on;
+            foreach (var r in renderers) if (r != null) r.enabled = on;
+            if (glow != null) glow.enabled = on;
         }
 
         public static void Say(string line, float seconds = 5f)
         {
             if (string.IsNullOrEmpty(line)) return;
+            if (Instance != null) Instance.visibleUntil = Mathf.Max(Instance.visibleUntil, Time.time + seconds + 1.5f);
             HeadHud.Instance.ShowSubtitle("Pip", line, seconds);
             if (Instance != null) ProceduralAudio.PlayChirpAt(Instance.transform.position);
             else ProceduralAudio.PlayChirp();
@@ -78,6 +100,11 @@ namespace AcrophobiaVR
             // During a panic wave Pip climbs above the player's head, glowing, so their gaze follows it up to the sky.
             if (FearSystem.Panicking)
                 target = head.position + flatFwd * 1.1f + Vector3.up * (1.6f + Mathf.Sin(Time.time * 3f) * 0.1f);
+            // Pip only drops in to talk (or help in a panic), then flies off out of sight.
+            bool wanted = Time.time < visibleUntil || FearSystem.Panicking;
+            if (!wanted)
+                target = head.position + Vector3.up * 4.5f - flatFwd * 2f + right * 3f;
+            SetShown(wanted || (transform.position - head.position).sqrMagnitude < 3.6f * 3.6f);
             transform.position = Vector3.SmoothDamp(transform.position, target, ref velocity, 0.45f);
             Vector3 look = head.position - transform.position;
             if (look.sqrMagnitude > 0.001f)
@@ -93,7 +120,7 @@ namespace AcrophobiaVR
 
             if (Time.time > nextIdleLine && LevelController.Instance != null && LevelController.Instance.Started && !SafeRoom.InSafeRoom)
             {
-                nextIdleLine = Time.time + Random.Range(70f, 110f);
+                nextIdleLine = Time.time + Random.Range(140f, 220f);
                 SayRandom(EncourageLines);
             }
         }

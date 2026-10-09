@@ -48,11 +48,10 @@ namespace AcrophobiaVR.EditorTools
                     Box("Column", bldg, new Vector3(x, 12.5f, z), new Vector3(0.4f, 25f, 0.4f), steel);
             Floor("Slab12", bldg, -6f, 6f, 6f, 12f, 12f, 0.3f, concrete, false);
             Floor("Roof25", bldg, -6.2f, 6.2f, -0.2f, 12.2f, 25f, 0.3f, concrete, true);
-            // Edge barriers on the roof (gentle + standard), with gaps for lift and plank
+            // Edge barriers on the roof (Easy only), with gaps for lift and plank
             void Barrier(Vector3 a, Vector3 b)
             {
-                var r = Railing("EdgeBarrier", bldg, a, b, 1.0f, yellow, true, 2f);
-                ShowIn(r, true, true, false);
+                Railing("EdgeBarrier", bldg, a, b, 1.0f, yellow, true, 2f);
                 SafetyGlass("EdgeMesh", bldg, a, b, 0.95f, mesh);
             }
             Barrier(new Vector3(-6.2f, 25f, -0.2f), new Vector3(6.2f, 25f, -0.2f));
@@ -62,9 +61,16 @@ namespace AcrophobiaVR.EditorTools
             Barrier(new Vector3(-6.2f, 25f, 5.4f), new Vector3(-6.2f, 25f, 12.2f));
             Barrier(new Vector3(6.2f, 25f, -0.2f), new Vector3(6.2f, 25f, 5.3f));
             Barrier(new Vector3(6.2f, 25f, 6.7f), new Vector3(6.2f, 25f, 12.2f));
-            // Brave mode: just a low toe-board
-            var toe = Box("ToeBoard", bldg, new Vector3(0, 25.08f, -0.15f), new Vector3(12.4f, 0.15f, 0.06f), hazard, false, false);
-            ShowIn(toe, false, false, true);
+            // A low toe-board on the south edge - the only thing between you and 25 m of air
+            Box("ToeBoard", bldg, new Vector3(0, 25.08f, -0.15f), new Vector3(12.4f, 0.15f, 0.06f), hazard, false, false);
+            // Gusts sweep across the open roof (east / west) - crouch or get pushed towards an edge
+            var roofWind = Group("RoofWind", game).AddComponent<GustZone>();
+            roofWind.transform.position = new Vector3(0f, 26.5f, 6f);
+            roofWind.size = new Vector3(12.4f, 4f, 12.4f);
+            roofWind.pushDirection = Vector3.right;
+            roofWind.randomSide = true;
+            roofWind.interval = new Vector2(9f, 14f);
+            roofWind.pushSpeed = 1.1f;
 
             // Lift tower + platform
             var liftTower = Group("LiftTower", env).transform;
@@ -93,7 +99,7 @@ namespace AcrophobiaVR.EditorTools
             };
             mp.stallAtWaypoint = 1;
             mp.stallSeconds = 6f;
-            mp.startLine = "Going up! Hold the rail if you like. Watch the ground get smaller.";
+            mp.startLine = "Going up! No rails on this lift - stay in the middle and watch the ground shrink.";
             mp.rideZone = Zone<HeadZoneRide>("RideZone", lift.transform, new Vector3(0, 1.2f, 0), new Vector3(2.3f, 2.6f, 2.3f));
             Box("CallSign", env, new Vector3(-7.75f, 2.4f, 1.6f), new Vector3(1.6f, 0.4f, 0.05f), Glow("ExitGreen", new Color(0.3f, 1f, 0.5f), 2f), false);
             var liftArrive = Zone<CheckpointZone>("CP Roof", game, new Vector3(-4.5f, 26.2f, 4f), new Vector3(3f, 2.4f, 3f));
@@ -104,16 +110,49 @@ namespace AcrophobiaVR.EditorTools
             var rideUp = Zone<ReachObjective>("ReachRoof", game, new Vector3(-3f, 26.2f, 4f), new Vector3(5f, 2.4f, 6f));
             rideUp.description = "Ride the open lift to the roof (25 m)";
 
-            // Diving plank off the north edge (hammer at the end)
-            var dive = Group("DivingPlank", game).transform;
-            var diveVisual = Group("Visual", dive).transform;
-            diveVisual.position = new Vector3(0, 25f, 13.7f);
-            Box("Plank", diveVisual, new Vector3(0, -0.04f, 0), new Vector3(0.8f, 0.08f, 3f), plankMat, true, false);
+            // A loose board sticking out off the north edge (hammer at the end) - a see-saw puzzle:
+            // walk out on it unweighted and it tips you off. Drop the cement bag on the inner end first.
+            var dive = Group("LooseBoard", game).transform;
+            var tipPivot = Group("TipPivot", dive).transform;
+            tipPivot.position = new Vector3(0, 25f, 12.2f);
+            var diveVisual = Group("Visual", tipPivot).transform;
+            diveVisual.position = new Vector3(0, 25f, 13f);
+            Box("Plank", diveVisual, new Vector3(0, 0.04f, 0), new Vector3(0.8f, 0.08f, 4.4f), plankMat, true, false);
             var diveBeam = dive.gameObject.AddComponent<BalanceBeam>();
-            diveBeam.start = Point("Start", dive, new Vector3(0, 25f, 12.2f));
-            diveBeam.end = Point("End", dive, new Vector3(0, 25f, 15.2f));
+            diveBeam.start = Point("Start", dive, new Vector3(0, 25.08f, 12.2f));
+            diveBeam.end = Point("End", dive, new Vector3(0, 25.08f, 15.2f));
             diveBeam.walkableHalfWidth = 0.4f;
             diveBeam.wobbleVisual = diveVisual;
+
+            var bag = Group("CementBag", game);
+            bag.transform.position = new Vector3(-3.5f, 25.13f, 9.5f);
+            Box("Sack", bag.transform, Vector3.zero, new Vector3(0.5f, 0.24f, 0.34f), Mat("CementSack", new Color(0.72f, 0.68f, 0.6f)), false, false);
+            Box("Label", bag.transform, new Vector3(0, 0.121f, 0), new Vector3(0.3f, 0.005f, 0.2f), Mat("SackLabel", new Color(0.8f, 0.2f, 0.15f)), false, false);
+            var bagCol = bag.AddComponent<BoxCollider>();
+            bagCol.size = new Vector3(0.5f, 0.24f, 0.34f);
+            MakeGrabbable(bag, true);
+            bag.AddComponent<ReturnIfLost>();
+            var weigh = Group("WeighBoard", game).AddComponent<DeliverObjective>();
+            weigh.description = "Weigh down the loose board with the cement bag";
+            weigh.companionLineOnComplete = "Thud! That board isn't going anywhere now. Go get that hammer!";
+            weigh.item = bag.transform;
+            var weighTarget = new GameObject("BoardWeightTarget");
+            weighTarget.transform.SetParent(game, false);
+            weighTarget.transform.position = new Vector3(0f, 25.5f, 11.3f);
+            var wbox = weighTarget.AddComponent<BoxCollider>();
+            wbox.isTrigger = true;
+            wbox.size = new Vector3(1.2f, 1.2f, 1.4f);
+            weighTarget.layer = 2;
+            weigh.target = wbox;
+            weigh.snapPoint = Point("BoardWeightSnap", game, new Vector3(0f, 25.2f, 11.1f));
+            var tipper = dive.gameObject.AddComponent<TippingPlank>();
+            tipper.pivot = tipPivot;
+            tipper.outward = Vector3.forward;
+            tipper.overhang = 3f;
+            tipper.halfWidth = 0.4f;
+            tipper.stabilizer = weigh;
+            Zone<SayZone>("LooseBoardHint", game, new Vector3(0f, 26.2f, 10.6f), new Vector3(2f, 2.4f, 1.2f)).line =
+                "That board is just lying loose over the edge - see how it rocks? Put something heavy on this end before you walk out.";
 
             // Plank bridge to the scaffold tower: three variants by exposure mode
             BuildPlankVariant(game, "PlankBridge Gentle", 1.0f, plankMat, rope, mesh, true, true, true, false, false);
@@ -136,8 +175,7 @@ namespace AcrophobiaVR.EditorTools
             var cpTower = Zone<CheckpointZone>("CP Tower", game, new Vector3(14f, 26.2f, 6f), new Vector3(3.6f, 2.4f, 3.6f));
             cpTower.label = "Scaffold tower";
             cpTower.respawnPoint = Point("CP Tower Spawn", game, new Vector3(13.5f, 25f, 6f), 90f);
-            cpTower.offerBreathingBreak = true;
-            cpTower.companionLine = "You crossed the plank! Let's take a few slow breaths before the climb.";
+            cpTower.companionLine = "Across the plank! Checkpoint saved. Next: up the ladder.";
 
             foreach (var x in new[] { 16.6f, 20.6f })
                 foreach (var z in new[] { 4f, 8f })
@@ -170,7 +208,9 @@ namespace AcrophobiaVR.EditorTools
             tools.description = "Find the 3 lost tools";
             tools.companionLineOnComplete = "All the tools! The foreman owes you a coffee.";
             tools.items.Add(Tool(game, "Wrench", new Vector3(5.2f, 25.25f, 11.3f), Mat("ToolSteel", new Color(0.7f, 0.72f, 0.75f), 0.8f, 0.9f), new Vector3(0.35f, 0.05f, 0.08f)));
-            tools.items.Add(Tool(game, "Hammer", new Vector3(0f, 25.25f, 14.8f), Mat("ToolRed", new Color(0.8f, 0.15f, 0.12f)), new Vector3(0.1f, 0.06f, 0.35f)));
+            var hammer = Tool(game, "Hammer", new Vector3(0f, 25.25f, 14.8f), Mat("ToolRed", new Color(0.8f, 0.15f, 0.12f)), new Vector3(0.1f, 0.06f, 0.35f));
+            hammer.transform.SetParent(tipPivot, true); // it rides the board if the board tips
+            tools.items.Add(hammer);
             tools.items.Add(Tool(game, "Hard hat", new Vector3(15.3f, 25.2f, 7.3f), yellow, new Vector3(0.28f, 0.16f, 0.32f)));
 
             // Flag to plant at the end of the jib
@@ -247,13 +287,13 @@ namespace AcrophobiaVR.EditorTools
             Star(game, new Vector3(-6.0f, 26.0f, 12.6f));
 
             var lc = CommonLevel(1, "Level 2 - The Construction Site", new Vector3(-7.75f, 0f, -5f), 0f, 0f, 45f, 0.5f);
-            lc.objectives = new Objective[] { rideUp, tools, climb, deliver };
+            lc.objectives = new Objective[] { rideUp, weigh, tools, climb, deliver };
             lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(-4.5f, 1.8f, -3f), new Vector3(-7.75f, 1.6f, -5f));
             lc.introLines = new[]
             {
                 "This is the Skyline Tower construction site! Our job: plant the topping-out flag at the end of the crane.",
                 "First, the open lift to the roof. It's slow and steady... mostly.",
-                "Three tools were left up there - grab them on the way. Then a plank, a ladder and the crane.",
+                "Three tools were left up there - one is on a loose board over the edge. No railings, three lives. Then a plank, a ladder and the crane.",
             };
             lc.finishLine = "Incredible! You rode a crane beam across the sky. Level two complete!";
             Save(scene, GameManager.LevelScenes[1]);

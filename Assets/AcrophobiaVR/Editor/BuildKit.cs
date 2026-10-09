@@ -317,7 +317,15 @@ namespace AcrophobiaVR.EditorTools
                 var ev = mid.AddComponent<ExposureVisual>();
                 ev.gentle = true; ev.standard = true; ev.brave = false;
             }
+            // Railings are an Easy-mode helper only: on Normal and Hard every edge is open and falls are real.
+            ShowIn(g, true, false, false);
             return g;
+        }
+
+        /// <summary>A low kerb along an open edge (10 cm) - it marks the edge without stopping you.</summary>
+        public static GameObject Kerb(string name, Transform parent, Vector3 from, Vector3 to, Material mat)
+        {
+            return Bar(name, parent, from + Vector3.up * 0.05f, to + Vector3.up * 0.05f, 0.1f, mat, false, true);
         }
 
         /// <summary>Gentle-mode safety glass panel between two points.</summary>

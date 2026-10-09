@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AcrophobiaVR
 {
-    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds, Construction }
+    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds, Construction, Rotor }
 
     /// <summary>
     /// Looping 3D ambient sound source for otherwise silent scene objects (busker, fountain, cars, lift motors,
@@ -60,6 +60,10 @@ namespace AcrophobiaVR
                 case EmitterKind.CafeChatter: minD = 2f; maxD = 18f; kindVolume = 0.5f; priority = 130; break;
                 case EmitterKind.Birds: minD = 5f; maxD = 80f; kindVolume = 1f; priority = 140; break;
                 case EmitterKind.Construction: minD = 8f; maxD = 120f; kindVolume = 0.9f; priority = 110; break;
+                case EmitterKind.Rotor:
+                    minD = 12f; maxD = 600f; kindVolume = 1f; priority = 60;
+                    source.dopplerLevel = 1f;
+                    break;
             }
             source.minDistance = minD;
             source.maxDistance = maxD;
@@ -132,6 +136,7 @@ namespace AcrophobiaVR
                 case EmitterKind.Motor: data = GenMotor(rate); break;
                 case EmitterKind.CafeChatter: data = GenChatter(rate); break;
                 case EmitterKind.Construction: data = GenConstruction(rate); break;
+                case EmitterKind.Rotor: data = GenRotor(rate); break;
                 default: data = GenBirds(rate); break;
             }
             if (data == null || data.Length == 0) return null;
@@ -369,6 +374,32 @@ namespace AcrophobiaVR
             }
             var o = LoopCrossfade(d, n, false);
             Normalize(o, 0.7f);
+            return o;
+        }
+
+        /// <summary>2 s helicopter loop: chopping blade slaps (~17 per second) over a low turbine rumble and whine.</summary>
+        static float[] GenRotor(int rate)
+        {
+            int n = rate * 2;
+            int fade = rate / 4;
+            int total = n + fade;
+            var d = new float[total];
+            var rng = new System.Random(4242);
+            var thump = new Svf(); thump.Set(160f, 0.9f, rate);
+            var rumble = new Svf(); rumble.Set(70f, 0.7f, rate);
+            for (int i = 0; i < total; i++)
+            {
+                double t = (double)i / rate;
+                double ph = t * 17.0;
+                float slap = (float)System.Math.Exp(-(ph - System.Math.Floor(ph)) * 9.0);
+                float noise = Noise(rng);
+                thump.Tick(noise * slap);
+                rumble.Tick(noise);
+                float whine = Sin01(1150.0 * t) * 0.04f + Sin01(2300.0 * t) * 0.02f;
+                d[i] = thump.Bp * 5f + rumble.Low * 2.2f + whine;
+            }
+            var o = LoopCrossfade(d, n, false);
+            Normalize(o, 0.8f);
             return o;
         }
 

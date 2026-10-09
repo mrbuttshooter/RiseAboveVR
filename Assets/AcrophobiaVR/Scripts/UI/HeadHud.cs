@@ -23,6 +23,10 @@ namespace AcrophobiaVR
         Coroutine toastRoutine;
         Coroutine subtitleRoutine;
         float ringVisibleUntil;
+        CanvasGroup livesGroup;
+        Image[] livesHearts;
+        TMPro.TMP_Text livesLabel;
+        Coroutine livesRoutine;
 
         public static HeadHud Instance
         {
@@ -55,6 +59,20 @@ namespace AcrophobiaVR
             subtitleGroup = subBg.gameObject.AddComponent<CanvasGroup>();
             subtitle = UIFactory.Label(subBg.transform, "", 36, new Vector2(0, 0), new Vector2(860, 140), TextAnchor.MiddleCenter);
             subtitleGroup.alpha = 0f;
+
+            var livesBg = UIFactory.Panel(root, new Color(0.05f, 0.08f, 0.12f, 0.8f), new Vector2(0, 120), new Vector2(360, 120));
+            livesGroup = livesBg.gameObject.AddComponent<CanvasGroup>();
+            livesHearts = UIFactory.HeartRow(livesBg.transform, 3, 3, new Vector2(0, 14), 64f);
+            livesLabel = UIFactory.Label(livesBg.transform, "", 26, new Vector2(0, -40), new Vector2(340, 36));
+            livesGroup.alpha = 0f;
+        }
+
+        /// <summary>Pops up the lives hearts for a moment (after a fall, at level start).</summary>
+        public void ShowLives(int lives, int max, string label, float seconds = 2.5f)
+        {
+            UIFactory.SetHearts(livesHearts, lives);
+            if (livesRoutine != null) StopCoroutine(livesRoutine);
+            livesRoutine = StartCoroutine(ShowFor(livesGroup, livesLabel, label, seconds));
         }
 
         void LateUpdate()

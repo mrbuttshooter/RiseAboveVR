@@ -24,8 +24,21 @@ namespace AcrophobiaVR
         public UnityEvent onFinale = new UnityEvent();
         public float finaleSeconds = 0f;
 
+        public const int MaxLives = 3;
         public int Slips { get; private set; }
+        public int Lives { get; private set; } = MaxLives;
         public bool IsRespawning { get; private set; }
+        public float ElapsedSeconds => Started ? Time.time - startTime : 0f;
+
+        public int TasksDone
+        {
+            get
+            {
+                int n = 0;
+                foreach (var o in objectives) if (o != null && o.IsComplete) n++;
+                return n;
+            }
+        }
         public bool Started { get; private set; }
         public float StandingHeadHeight { get; private set; } = 1.65f;
 
@@ -37,6 +50,7 @@ namespace AcrophobiaVR
         {
             Instance = this;
             if (GetComponent<FearSystem>() == null) gameObject.AddComponent<FearSystem>();
+            if (GetComponent<PauseMenu>() == null) gameObject.AddComponent<PauseMenu>();
         }
 
         IEnumerator Start()
@@ -94,6 +108,11 @@ namespace AcrophobiaVR
 
         void AskBefore()
         {
+            if (!ExposureSettings.TrackAnxiety)
+            {
+                StartCoroutine(CountdownThenBegin());
+                return;
+            }
             RatingPanel.Show(levelTitle, "Before we start: how anxious do you feel right now?\n0 = totally calm, 10 = panic", value =>
             {
                 ratingBefore = value;
@@ -101,8 +120,8 @@ namespace AcrophobiaVR
                 if (value >= 8 && ExposureSettings.Mode != ExposureMode.Gentle)
                 {
                     Dialog.Show("Let's take it slower",
-                        "That's a high number, and that's okay.\nGentle mode adds safety glass, extra rails and fog so the drop feels less intense.",
-                        new Dialog.Choice("Switch to Gentle", () => { ExposureSettings.Mode = ExposureMode.Gentle; Breathe(); }, UIFactory.Calm * 0.8f),
+                        "That's a high number, and that's okay.\nEasy mode brings back railings, safety glass and fog so the drop feels less intense.",
+                        new Dialog.Choice("Switch to Easy",() => { ExposureSettings.Mode = ExposureMode.Gentle; Breathe(); }, UIFactory.Calm * 0.8f),
                         new Dialog.Choice("Keep current mode", Breathe));
                 }
                 else if (value >= 5)
@@ -114,6 +133,18 @@ namespace AcrophobiaVR
                     Begin();
                 }
             });
+        }
+
+        IEnumerator CountdownThenBegin()
+        {
+            foreach (var n in new[] { "3", "2", "1" })
+            {
+                HeadHud.Instance.ShowMessage(n, 0.6f);
+                ProceduralAudio.PlayChime(0.8f);
+                yield return new WaitForSeconds(0.9f);
+            }
+            ProceduralAudio.PlayChime(1.6f);
+            Begin();
         }
 
         void Breathe()
@@ -131,7 +162,8 @@ namespace AcrophobiaVR
                 if (o != null) o.Activate();
             if (boardPoint != null)
                 ObjectiveBoard.Create(levelTitle, objectives, boardPoint.position, boardPoint.rotation);
-            HeadHud.Instance.ShowMessage("Go! Press X / Esc anytime for the Calm Meadow", 4f);
+            HeadHud.Instance.ShowMessage("Go! Press Esc (or X) anytime to pause", 4f);
+            HeadHud.Instance.ShowLives(Lives, MaxLives, "3 lives - every fall is real", 4f);
             SessionLogger.Log(SceneName, "level_start");
         }
 
@@ -171,34 +203,60 @@ namespace AcrophobiaVR
             onFinale?.Invoke();
             yield return new WaitForSeconds(Mathf.Max(2.5f, finaleSeconds));
 
+            if (!ExposureSettings.TrackAnxiety)
+            {
+                Complete(seconds, -1, -1);
+                yield break;
+            }
             RatingPanel.Show("Level complete!", "And now: how anxious do you feel?\n0 = totally calm, 10 = panic", after =>
             {
                 SessionLogger.Log(SceneName, "anxiety_after", after.ToString());
-                int stars = 1 + (Slips == 0 ? 1 : 0) + (CourageStar.Total == 0 || CourageStar.Collected == CourageStar.Total ? 1 : 0);
-                int before = Mathf.Max(0, ratingBefore);
-                if (Slips == 0) Achievements.Unlock("steady_feet");
-                if (CourageStar.Total > 0 && CourageStar.Collected == CourageStar.Total) Achievements.Unlock("star_collector");
-                if (levelIndex == 2) Achievements.Unlock("sky_high");
-                if (ExposureSettings.Mode == ExposureMode.Brave) Achievements.Unlock("brave_soul");
-                if (FearSystem.PanicsBeaten > 0) Achievements.Unlock("panic_beaten"); // fallback; FearSystem may also unlock it live (idempotent)
-                ProgressStore.RecordResult(levelIndex, stars, seconds, before, after);
-                if (ProgressStore.TotalStars() >= 9) Achievements.Unlock("all_stars");
-                GameManager.Instance.CompleteLevel(levelIndex);
-                ShowSummary(stars, seconds, before, after);
+                Complete(seconds, Mathf.Max(0, ratingBefore), after);
             });
         }
 
-        void ShowSummary(int stars, float seconds, int before, int after)
+        /// <summary>Score: tasks, courage stars, lives left and a time bonus.</summary>
+        public int ComputeScore(float seconds)
         {
-            string change;
-            if (after < before) change = "Your anxiety dropped by <b>" + (before - after) + "</b> points. That is exposure therapy working!";
-            else if (after == before) change = "Your anxiety stayed level - you handled the height without it growing.";
-            else change = "It felt harder this time, and you still finished. That counts. Try Gentle mode or a breathing break next time.";
+            int score = TasksDone * 500 + CourageStar.Collected * 250 + Lives * 400 + Mathf.Max(0, Mathf.RoundToInt(2000f - seconds * 4f));
+            if (ExposureSettings.Mode == ExposureMode.Brave) score = Mathf.RoundToInt(score * 1.5f);
+            else if (ExposureSettings.Mode == ExposureMode.Gentle) score = Mathf.RoundToInt(score * 0.6f);
+            return score;
+        }
 
+        void Complete(float seconds, int before, int after)
+        {
+            int stars = 1 + (Slips == 0 ? 1 : 0) + (CourageStar.Total == 0 || CourageStar.Collected == CourageStar.Total ? 1 : 0);
+            if (Slips == 0) Achievements.Unlock("steady_feet");
+            if (CourageStar.Total > 0 && CourageStar.Collected == CourageStar.Total) Achievements.Unlock("star_collector");
+            if (levelIndex == 2) Achievements.Unlock("sky_high");
+            if (ExposureSettings.Mode == ExposureMode.Brave) Achievements.Unlock("brave_soul");
+            if (FearSystem.PanicsBeaten > 0) Achievements.Unlock("panic_beaten"); // fallback; FearSystem may also unlock it live (idempotent)
+            ProgressStore.RecordResult(levelIndex, stars, seconds, Mathf.Max(0, before), Mathf.Max(0, after));
+            if (ProgressStore.TotalStars() >= 9) Achievements.Unlock("all_stars");
+            GameManager.Instance.CompleteLevel(levelIndex);
+
+            int score = ComputeScore(seconds);
+            string bestKey = "acro_best_score_" + levelIndex;
+            bool newBest = score > PlayerPrefs.GetInt(bestKey, 0);
+            if (newBest)
+            {
+                PlayerPrefs.SetInt(bestKey, score);
+                PlayerPrefs.Save();
+            }
+            SessionLogger.Log(SceneName, "score", score.ToString());
+            ShowSummary(stars, seconds, before, after, score, newBest);
+        }
+
+        void ShowSummary(int stars, float seconds, int before, int after, int score, bool newBest)
+        {
+            string headline = Slips == 0 ? "Flawless - not a single fall!" : (Lives == 1 ? "Phew - that was close! One life left." : "Made it to the top!");
             string body =
-                "\n\n" +
-                "Time " + FormatTime(seconds) + "     Slips " + Slips + "     Courage stars " + CourageStar.Collected + "/" + CourageStar.Total + "\n" +
-                "Anxiety " + before + " to " + after + "     Peak heart rate " + FearSystem.PeakBpm + " BPM     Panic waves beaten " + FearSystem.PanicsBeaten + "\n\n" + change;
+                "\n\n<size=56><b>" + score.ToString("N0") + "</b></size> points" + (newBest ? "   <color=#FFD54D><b>NEW BEST!</b></color>" : "") + "\n" +
+                "Time " + FormatTime(seconds) + "     Falls " + Slips + "     Lives left " + Lives + "/" + MaxLives + "     Courage stars " + CourageStar.Collected + "/" + CourageStar.Total + "\n" +
+                "Peak heart rate " + FearSystem.PeakBpm + " BPM     Panic waves beaten " + FearSystem.PanicsBeaten + "\n\n" + headline;
+            if (before >= 0 && after >= 0)
+                body += "\nAnxiety " + before + " to " + after + (after < before ? " - it dropped!" : "");
 
             bool hasNext = levelIndex + 1 < GameManager.LevelScenes.Length;
             Dialog summary;
@@ -220,7 +278,10 @@ namespace AcrophobiaVR
             return (s / 60) + ":" + (s % 60).ToString("00");
         }
 
-        /// <summary>Player slipped (fell off, lost balance, glass broke). Gentle fade back to the checkpoint.</summary>
+        /// <summary>
+        /// Player fell (stepped off, lost balance, glass broke, a tile or plank gave way). The fall is felt for a
+        /// moment before the screen goes dark, costs one of the three lives, and returns them to the checkpoint.
+        /// </summary>
         public void Slip(string reason)
         {
             if (IsRespawning || finished) return;
@@ -231,16 +292,51 @@ namespace AcrophobiaVR
         {
             IsRespawning = true;
             Slips++;
+            Lives = Mathf.Max(0, Lives - 1);
             SessionLogger.Log(SceneName, "slip", reason);
-            ProceduralAudio.PlayWhoosh(0.6f);
+            SessionLogger.Log(SceneName, "lives_left", Lives.ToString());
             Haptics.Strong();
-            yield return ScreenFader.Instance.FadeOut(0.25f);
+            ProceduralAudio.PlayWhoosh(1f);
+            FearSystem.Spike(0.6f);
+
+            var rig = PlayerRig.Instance;
+            if (rig != null && (reason == "balance" || reason == "gust"))
+            {
+                // Losing your balance tips you off the side of the beam - and then you really fall.
+                Vector3 side = rig.Head.right * (Random.value < 0.5f ? -1f : 1f);
+                side.y = 0f;
+                rig.MoveBy(side.normalized * 0.8f);
+            }
+            // A second of rushing air before the screen goes dark (the fall itself is real physics).
+            if (reason != "froze") yield return new WaitForSeconds(reason == "fall" ? 0.55f : 0.85f);
+            yield return ScreenFader.Instance.FadeOut(0.3f);
             CheckpointSystem.RespawnPlayer();
             BalanceBeam.ResetAll();
             yield return new WaitForSeconds(0.4f);
             yield return ScreenFader.Instance.FadeIn(0.8f);
+
+            if (Lives <= 0)
+            {
+                OutOfLives(); // IsRespawning stays true: nothing else can happen until the player chooses
+                yield break;
+            }
             IsRespawning = false;
+            HeadHud.Instance.ShowLives(Lives, MaxLives, Lives == 1 ? "Last life - slow and steady" : Lives + " lives left");
             Companion.SayRandom(Companion.SlipLines);
+        }
+
+        void OutOfLives()
+        {
+            finished = true;
+            SessionLogger.Log(SceneName, "out_of_lives");
+            HeadHud.Instance.ShowLives(0, MaxLives, "Out of lives", 4f);
+            var d = Dialog.Show("Game over",
+                "You fell " + MaxLives + " times - the heights win this round.\n\n" +
+                "Tasks done: " + TasksDone + " / " + objectives.Length + "     Courage stars: " + CourageStar.Collected + " / " + CourageStar.Total + "\n\n" +
+                "Watch your footing, crouch in the wind, and go again!",
+                new Dialog.Choice("Try again", () => GameManager.Instance.ReloadCurrent(), UIFactory.Calm * 0.8f),
+                new Dialog.Choice("Back to the park", () => GameManager.Instance.LoadMenu()));
+            UIFactory.HeartRow(d.Content, 0, MaxLives, new Vector2(0, 215), 64f);
         }
     }
 }

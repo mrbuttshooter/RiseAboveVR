@@ -209,12 +209,16 @@ namespace AcrophobiaVR.EditorTools
             splashMain.loop = true;
 
             var dog = LookTarget("Dog", game, new Vector3(8f, 0.16f, -18f), 0.5f);
-            var dogBody = Group("DogBody", dog);
-            var fur = Mat("Fur", new Color(0.85f, 0.65f, 0.35f));
-            Box("Torso", dogBody.transform, new Vector3(0, 0.35f, 0), new Vector3(0.3f, 0.25f, 0.6f), fur, false, false);
-            Box("Head", dogBody.transform, new Vector3(0, 0.5f, 0.35f), new Vector3(0.22f, 0.22f, 0.25f), fur, false, false);
-            for (int leg = 0; leg < 4; leg++)
-                Box("Leg", dogBody.transform, new Vector3(leg % 2 == 0 ? -0.1f : 0.1f, 0.12f, leg < 2 ? 0.2f : -0.2f), new Vector3(0.07f, 0.24f, 0.07f), fur, false, false);
+            // Gemini-made model; primitive fallback if the file is missing.
+            if (Model("Biscuit", dog, Vector3.zero, 0.6f) == null)
+            {
+                var dogBody = Group("DogBody", dog);
+                var fur = Mat("Fur", new Color(0.85f, 0.65f, 0.35f));
+                Box("Torso", dogBody.transform, new Vector3(0, 0.35f, 0), new Vector3(0.3f, 0.25f, 0.6f), fur, false, false);
+                Box("Head", dogBody.transform, new Vector3(0, 0.5f, 0.35f), new Vector3(0.22f, 0.22f, 0.25f), fur, false, false);
+                for (int leg = 0; leg < 4; leg++)
+                    Box("Leg", dogBody.transform, new Vector3(leg % 2 == 0 ? -0.1f : 0.1f, 0.12f, leg < 2 ? 0.2f : -0.2f), new Vector3(0.07f, 0.24f, 0.07f), fur, false, false);
+            }
             var walk = dog.gameObject.AddComponent<LoopMover>();
             walk.points = new[] { new Vector3(4f, 0.16f, -18f), new Vector3(14f, 0.16f, -18f), new Vector3(14f, 0.16f, -19.5f), new Vector3(4f, 0.16f, -19.5f) };
             walk.speed = 1.2f;
@@ -273,11 +277,15 @@ namespace AcrophobiaVR.EditorTools
             var parrot = Group("Kiwi (Parrot)", game);
             parrot.transform.position = new Vector3(9.6f, B + 0.02f, -0.2f);
             parrot.transform.rotation = Quaternion.Euler(0, -90, 0);
-            var feathers = Mat("ParrotGreen", new Color(0.2f, 0.75f, 0.3f), 0.5f);
-            Prim(PrimitiveType.Capsule, "Body", parrot.transform, new Vector3(0, 0.2f, 0), new Vector3(0.16f, 0.16f, 0.16f), feathers, false, false);
-            Sphere("Head", parrot.transform, new Vector3(0, 0.38f, 0.04f), 0.13f, Mat("ParrotRed", new Color(0.9f, 0.2f, 0.15f), 0.5f), false, false);
-            Prim(PrimitiveType.Cube, "Beak", parrot.transform, new Vector3(0, 0.37f, 0.12f), new Vector3(0.04f, 0.05f, 0.07f), Mat("PipBeak", new Color(1f, 0.7f, 0.2f)), false, false);
-            Bar("Tail", parrot.transform, new Vector3(0, 0.12f, -0.06f), new Vector3(0, 0.02f, -0.3f), 0.05f, Mat("ParrotBlue", new Color(0.2f, 0.35f, 0.9f), 0.5f), false, false);
+            // Gemini-made model (Assets/AcrophobiaVR/Models/Kiwi.fbx); primitive fallback if it is missing.
+            if (Model("Kiwi", parrot.transform, Vector3.zero, 0.42f) == null)
+            {
+                var feathers = Mat("ParrotGreen", new Color(0.2f, 0.75f, 0.3f), 0.5f);
+                Prim(PrimitiveType.Capsule, "Body", parrot.transform, new Vector3(0, 0.2f, 0), new Vector3(0.16f, 0.16f, 0.16f), feathers, false, false);
+                Sphere("Head", parrot.transform, new Vector3(0, 0.38f, 0.04f), 0.13f, Mat("ParrotRed", new Color(0.9f, 0.2f, 0.15f), 0.5f), false, false);
+                Prim(PrimitiveType.Cube, "Beak", parrot.transform, new Vector3(0, 0.37f, 0.12f), new Vector3(0.04f, 0.05f, 0.07f), Mat("PipBeak", new Color(1f, 0.7f, 0.2f)), false, false);
+                Bar("Tail", parrot.transform, new Vector3(0, 0.12f, -0.06f), new Vector3(0, 0.02f, -0.3f), 0.05f, Mat("ParrotBlue", new Color(0.2f, 0.35f, 0.9f), 0.5f), false, false);
+            }
             var parrotCol = parrot.AddComponent<BoxCollider>();
             parrotCol.size = new Vector3(0.25f, 0.5f, 0.45f);
             parrotCol.center = new Vector3(0, 0.22f, 0);

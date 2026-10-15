@@ -322,6 +322,48 @@ namespace AcrophobiaVR.EditorTools
             return g;
         }
 
+        public const string ModelFolder = "Assets/AcrophobiaVR/Models/";
+
+        /// <summary>
+        /// Places a Gemini-made model (Assets/AcrophobiaVR/Models/{file}.fbx) under parent: scaled so its height is
+        /// targetHeight, feet on localPos, facing the parent's forward + yaw. Colliders stripped, not static.
+        /// Returns null when the file is missing so callers can fall back to primitive shapes.
+        /// </summary>
+        public static GameObject Model(string file, Transform parent, Vector3 localPos, float targetHeight, float yaw = 0f)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + file + ".fbx");
+            if (prefab == null) return null;
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            go.name = file + " (model)";
+            go.transform.SetParent(parent, false);
+            // Keep the importer's own root rotation (Blender files often carry a -90 X axis fix).
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * ModelImportFix * prefab.transform.localRotation;
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localScale = Vector3.one;
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+            foreach (var t in go.GetComponentsInChildren<Transform>(true)) GameObjectUtility.SetStaticEditorFlags(t.gameObject, 0);
+
+            // Normalise size and sit it on the ground point.
+            Bounds b = WorldBounds(go);
+            if (b.size.y > 0.0001f) go.transform.localScale = Vector3.one * (targetHeight / (b.size.y / Mathf.Max(0.0001f, parent.lossyScale.y)));
+            b = WorldBounds(go);
+            Vector3 groundWorld = parent.TransformPoint(localPos);
+            go.transform.position += new Vector3(groundWorld.x - b.center.x, groundWorld.y - b.min.y, groundWorld.z - b.center.z);
+            return go;
+        }
+
+        /// <summary>Extra rotation applied to every imported model (Blender -Y-forward exports face Unity +Z after this).</summary>
+        public static Quaternion ModelImportFix = Quaternion.identity;
+
+        static Bounds WorldBounds(GameObject go)
+        {
+            var rs = go.GetComponentsInChildren<Renderer>(true);
+            if (rs.Length == 0) return new Bounds(go.transform.position, Vector3.zero);
+            var b = rs[0].bounds;
+            foreach (var r in rs) b.Encapsulate(r.bounds);
+            return b;
+        }
+
         /// <summary>A low kerb along an open edge (10 cm) - it marks the edge without stopping you.</summary>
         public static GameObject Kerb(string name, Transform parent, Vector3 from, Vector3 to, Material mat)
         {

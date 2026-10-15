@@ -1,0 +1,18 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+
+SUBJECT: "Kiwi", a stylized but well-crafted cartoon parrot (small macaw / conure look) for a VR game. Pixar-quality silhouette, readable from 2 m away.
+
+REQUIREMENTS
+- Delete everything in the default scene first.
+- Height about 0.42 m, perched pose: body tilted ~25 degrees forward, head up. Origin at the bottom of the feet, model faces -Y, Z is up.
+- Anatomy must be CONNECTED - no floating parts: head blends into a short neck and the body; thighs come out of the underside of the body and reach the feet; short grey scaly legs; zygodactyl feet (2 toes forward, 2 back) with curved claws, gripping as if on a branch.
+- Shapes: egg-shaped body; round head with a slightly flattened face; large hooked upper beak (curved, pointed tip overhanging the lower beak), smaller lower beak; big glossy black eyes with a white specular dot and a pale eye-ring; wings folded against the body sides, tapered and layered (at least 3 overlapping feather plates per wing, primaries reaching past the tail base); long tapered tail of 5-7 feathers fanning slightly; small cheek patches; a few feather tufts on top of the head.
+- Colours (Principled BSDF, roughness ~0.5): body bright green, head and cheeks red-orange, wing tips and tail blue with a yellow edge on the primaries, beak ivory with a darker tip, legs grey, eyes black.
+- Smooth surfaces: build from low-poly primitives/bmesh, add Subdivision Surface (level 2) and smooth shading, then APPLY all modifiers before export.
+- Triangle count after applying modifiers: 6000 to 16000 (Meta Quest).
+- Join everything into ONE object named "Kiwi", one material slot per colour.
+- Read the output path from sys.argv after the "--" argument (e.g. C:/x/kiwi.fbx); create its folder if needed.
+- Export FBX there: selected object only, apply transforms, axis_forward='-Z', axis_up='Y', mesh smooth type FACE.
+- Then render a preview PNG to the same path with ".png" instead of ".fbx": 900x900, EEVEE, light grey studio world (strength 0.7), one key sun light plus a soft fill, camera at a 3/4 front view (front-left, slightly above) framing the whole model with ~10% margin. Print the final triangle count with print("TRIS", n).
+- Guard every math operation against invalid values (clamp parameters to 0..1 before fractional powers, avoid division by zero) so the script runs without errors.

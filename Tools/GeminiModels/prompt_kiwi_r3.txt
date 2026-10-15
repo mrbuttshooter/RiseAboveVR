@@ -1,0 +1,600 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+You are improving your own Blender 5.2 Python script for "Kiwi", a cartoon parrot for a VR game. Return the COMPLETE improved script (same export/render behaviour, one object "Kiwi", 6000-16000 triangles, bpy/bmesh/mathutils/math/sys/os only). Output ONLY Python code, no markdown fences.
+
+ART DIRECTOR NOTES - round 2 is much better (keep the wings, head, eyes and beak as they are). Fix:
+1. FEET FLOAT: the feet hang in the air below the body with a visible gap. Compute the lowest point of the body mesh after its rotation and place short, thick grey legs (tarsus) that START INSIDE the belly and END at the feet, so leg tops are embedded 2 cm into the body and the toes rest on Z=0. No gaps anywhere. Then move the whole bird so the lowest toe touches Z=0 (origin at the feet).
+2. COLOURS LOOK WASHED OUT: use more saturated base colours - body (0.05, 0.55, 0.12), head (0.85, 0.22, 0.06), cheeks (0.95, 0.55, 0.1), primaries/tail (0.05, 0.25, 0.85), beak (0.88, 0.85, 0.75) with tip (0.25, 0.25, 0.28), legs (0.45, 0.45, 0.47); roughness 0.45; reduce the world/background strength to 0.45 and the sun to 3.0 so colours are not blown out.
+3. TAIL: make it longer and more visible - 6 tapered blue feathers, 0.18 m long, continuing the body line down and back.
+4. Also render a second preview of the model from straight in FRONT (camera on -Y looking +Y) to the same path with "_front.png" instead of ".png", same framing rules.
+
+CURRENT SCRIPT:
+import os
+import sys
+import math
+import bpy
+import bmesh
+import mathutils
+
+def safe_clamp(val, low=0.0, high=1.0):
+    return max(low, min(high, float(val)))
+
+def safe_div(num, den, eps=1e-6):
+    if abs(den) < eps:
+        return num / eps if den >= 0.0 else num / (-eps)
+    return num / den
+
+def safe_pow(base, exp):
+    return math.pow(safe_clamp(base, 0.0, 1.0), exp)
+
+def safe_normalize(v):
+    if v.length < 1e-6:
+        return mathutils.Vector((0.0, 0.0, 1.0))
+    return v.normalized()
+
+if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(use_global=False)
+
+for block in list(bpy.data.meshes):
+    bpy.data.meshes.remove(block)
+for block in list(bpy.data.materials):
+    bpy.data.materials.remove(block)
+for block in list(bpy.data.cameras):
+    bpy.data.cameras.remove(block)
+for block in list(bpy.data.lights):
+    bpy.data.lights.remove(block)
+for block in list(bpy.data.worlds):
+    bpy.data.worlds.remove(block)
+
+output_path = "C:/tmp/kiwi.fbx"
+if "--" in sys.argv:
+    argv_idx = sys.argv.index("--")
+    if argv_idx + 1 < len(sys.argv):
+        output_path = sys.argv[argv_idx + 1]
+
+out_dir = os.path.dirname(os.path.abspath(output_path))
+if out_dir:
+    os.makedirs(out_dir, exist_ok=True)
+
+def create_principled_mat(name, base_color, roughness=0.5, specular=0.5, ior=1.45):
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF")
+    if bsdf:
+        if "Base Color" in bsdf.inputs:
+            bsdf.inputs["Base Color"].default_value = base_color
+        if "Roughness" in bsdf.inputs:
+            bsdf.inputs["Roughness"].default_value = safe_clamp(roughness, 0.0, 1.0)
+        if "IOR" in bsdf.inputs:
+            bsdf.inputs["IOR"].default_value = max(1.0, float(ior))
+        if "Specular IOR Level" in bsdf.inputs:
+            bsdf.inputs["Specular IOR Level"].default_value = safe_clamp(specular, 0.0, 1.0)
+        elif "Specular" in bsdf.inputs:
+            bsdf.inputs["Specular"].default_value = safe_clamp(specular, 0.0, 1.0)
+    return mat
+
+mat_body_green    = create_principled_mat("Mat_BodyGreen",    (0.04, 0.74, 0.09, 1.0), roughness=0.46)
+mat_head_red      = create_principled_mat("Mat_HeadRedOrange",(0.96, 0.17, 0.02, 1.0), roughness=0.48)
+mat_cheek_orange  = create_principled_mat("Mat_CheekOrange",  (0.98, 0.46, 0.03, 1.0), roughness=0.50)
+mat_wing_blue     = create_principled_mat("Mat_WingBlue",     (0.03, 0.24, 0.86, 1.0), roughness=0.42)
+mat_wing_yellow   = create_principled_mat("Mat_WingYellow",   (0.98, 0.84, 0.04, 1.0), roughness=0.45)
+mat_beak_ivory    = create_principled_mat("Mat_BeakIvory",    (0.88, 0.82, 0.69, 1.0), roughness=0.34)
+mat_beak_dark     = create_principled_mat("Mat_BeakDark",     (0.18, 0.16, 0.16, 1.0), roughness=0.40)
+mat_eye_black     = create_principled_mat("Mat_EyeBlack",     (0.015, 0.015, 0.015, 1.0), roughness=0.04, specular=0.95)
+mat_eye_highlight = create_principled_mat("Mat_EyeHighlight", (0.98, 0.98, 0.98, 1.0), roughness=0.10, specular=1.0)
+mat_eye_ring      = create_principled_mat("Mat_EyeRing",      (0.91, 0.88, 0.82, 1.0), roughness=0.65)
+mat_leg_grey      = create_principled_mat("Mat_LegGrey",      (0.33, 0.33, 0.35, 1.0), roughness=0.60)
+mat_claw_dark     = create_principled_mat("Mat_ClawDark",     (0.12, 0.12, 0.13, 1.0), roughness=0.35)
+
+master_materials = [
+    mat_body_green,    # 0
+    mat_head_red,      # 1
+    mat_cheek_orange,  # 2
+    mat_wing_blue,     # 3
+    mat_wing_yellow,   # 4
+    mat_beak_ivory,    # 5
+    mat_beak_dark,     # 6
+    mat_eye_black,     # 7
+    mat_eye_highlight, # 8
+    mat_eye_ring,      # 9
+    mat_leg_grey,      # 10
+    mat_claw_dark      # 11
+]
+
+bm = bmesh.new()
+
+body_rings_def = [
+    (0.0,  0.065, 0.080, 0.026, 0.026, 0),
+    (0.0,  0.040, 0.110, 0.062, 0.065, 0),
+    (0.0,  0.015, 0.155, 0.086, 0.090, 0),
+    (0.0, -0.010, 0.205, 0.093, 0.096, 0),
+    (0.0, -0.035, 0.255, 0.083, 0.085, 0),
+    (0.0, -0.055, 0.295, 0.062, 0.062, 0),
+    (0.0, -0.058, 0.325, 0.042, 0.040, 1),
+    (0.0, -0.058, 0.355, 0.048, 0.046, 1),
+    (0.0, -0.058, 0.380, 0.048, 0.046, 1),
+    (0.0, -0.055, 0.402, 0.038, 0.036, 1),
+    (0.0, -0.050, 0.415, 0.016, 0.016, 1)
+]
+
+body_rings_verts = []
+for i, (cx, cy, cz, rx, ry, mat_idx) in enumerate(body_rings_def):
+    ring_v = []
+    for j in range(8):
+        theta = j * (2.0 * math.pi / 8.0)
+        vx = cx + rx * math.sin(theta)
+        vy = cy - ry * math.cos(theta)
+        vz = cz
+        v = bm.verts.new((vx, vy, vz))
+        ring_v.append(v)
+    body_rings_verts.append(ring_v)
+
+for i in range(len(body_rings_verts) - 1):
+    mat_idx = body_rings_def[i][5]
+    rA = body_rings_verts[i]
+    rB = body_rings_verts[i + 1]
+    for j in range(8):
+        jn = (j + 1) % 8
+        f = bm.faces.new([rA[j], rA[jn], rB[jn], rB[j]])
+        f.material_index = mat_idx
+
+f_bot0 = bm.faces.new([body_rings_verts[0][0], body_rings_verts[0][7], body_rings_verts[0][6], body_rings_verts[0][1]])
+f_bot0.material_index = 0
+f_bot1 = bm.faces.new([body_rings_verts[0][1], body_rings_verts[0][6], body_rings_verts[0][5], body_rings_verts[0][2]])
+f_bot1.material_index = 0
+f_bot2 = bm.faces.new([body_rings_verts[0][2], body_rings_verts[0][5], body_rings_verts[0][4], body_rings_verts[0][3]])
+f_bot2.material_index = 0
+
+f_top0 = bm.faces.new([body_rings_verts[-1][7], body_rings_verts[-1][0], body_rings_verts[-1][1], body_rings_verts[-1][6]])
+f_top0.material_index = 1
+f_top1 = bm.faces.new([body_rings_verts[-1][6], body_rings_verts[-1][1], body_rings_verts[-1][2], body_rings_verts[-1][5]])
+f_top1.material_index = 1
+f_top2 = bm.faces.new([body_rings_verts[-1][5], body_rings_verts[-1][2], body_rings_verts[-1][3], body_rings_verts[-1][4]])
+f_top2.material_index = 1
+
+def build_quad_tube(bm, rings, mat_idx, cap_top=False, cap_bot=False):
+    for i in range(len(rings) - 1):
+        rA = rings[i]
+        rB = rings[i + 1]
+        n = len(rA)
+        for j in range(n):
+            jn = (j + 1) % n
+            f = bm.faces.new([rA[j], rA[jn], rB[jn], rB[j]])
+            f.material_index = mat_idx
+    if cap_top and len(rings[-1]) == 4:
+        f = bm.faces.new([rings[-1][3], rings[-1][2], rings[-1][1], rings[-1][0]])
+        f.material_index = mat_idx
+    if cap_bot and len(rings[0]) == 4:
+        f = bm.faces.new([rings[0][0], rings[0][1], rings[0][2], rings[0][3]])
+        f.material_index = mat_idx
+
+for side in [-1.0, 1.0]:
+    leg_rings = []
+    lc_top = (side * 0.028, 0.005, 0.052)
+    lc_bot = (side * 0.028, 0.005, 0.024)
+    for t_step in [0.0, 0.5, 1.0]:
+        z = lc_top[2] * (1.0 - t_step) + lc_bot[2] * t_step
+        y = lc_top[1] * (1.0 - t_step) + lc_bot[1] * t_step
+        x = lc_top[0] * (1.0 - t_step) + lc_bot[0] * t_step
+        r_v = []
+        for j in range(6):
+            theta = j * (2.0 * math.pi / 6.0)
+            r_v.append(bm.verts.new((x + 0.009 * math.cos(theta), y + 0.009 * math.sin(theta), z)))
+        leg_rings.append(r_v)
+    build_quad_tube(bm, leg_rings, 10)
+
+def build_curved_toe(bm, b_pos, m_pos, t_pos, c_pos, r_base, r_tip, toe_mat=10, claw_mat=11):
+    def make_cross(pos, nxt, radius):
+        dir_v = safe_normalize(mathutils.Vector(nxt) - mathutils.Vector(pos))
+        up = mathutils.Vector((0.0, 0.0, 1.0))
+        if abs(dir_v.dot(up)) > 0.9:
+            up = mathutils.Vector((1.0, 0.0, 0.0))
+        right = safe_normalize(dir_v.cross(up))
+        real_up = safe_normalize(right.cross(dir_v))
+        verts = []
+        for angle in [0.0, math.pi * 0.5, math.pi, math.pi * 1.5]:
+            pt = mathutils.Vector(pos) + (right * math.cos(angle) + real_up * math.sin(angle)) * radius
+            verts.append(bm.verts.new((pt.x, pt.y, pt.z)))
+        return verts
+
+    r0 = make_cross(b_pos, m_pos, r_base)
+    r1 = make_cross(m_pos, t_pos, (r_base + r_tip) * 0.5)
+    r2 = make_cross(t_pos, c_pos, r_tip)
+    claw_pt = bm.verts.new(c_pos)
+
+    for i in range(len(r0)):
+        inxt = (i + 1) % len(r0)
+        f0 = bm.faces.new([r0[i], r0[inxt], r1[inxt], r1[i]])
+        f0.material_index = toe_mat
+        f1 = bm.faces.new([r1[i], r1[inxt], r2[inxt], r2[i]])
+        f1.material_index = toe_mat
+        fc = bm.faces.new([r2[i], r2[inxt], claw_pt])
+        fc.material_index = claw_mat
+
+for side in [-1.0, 1.0]:
+    t2_base = (side * 0.024,  0.001, 0.022)
+    t2_mid  = (side * 0.018, -0.014, 0.012)
+    t2_tip  = (side * 0.015, -0.026, 0.004)
+    t2_claw = (side * 0.014, -0.034, 0.000)
+    build_curved_toe(bm, t2_base, t2_mid, t2_tip, t2_claw, 0.0095, 0.0065)
+
+    t3_base = (side * 0.032,  0.001, 0.022)
+    t3_mid  = (side * 0.038, -0.016, 0.012)
+    t3_tip  = (side * 0.042, -0.029, 0.004)
+    t3_claw = (side * 0.044, -0.038, 0.000)
+    build_curved_toe(bm, t3_base, t3_mid, t3_tip, t3_claw, 0.0095, 0.0065)
+
+    t1_base = (side * 0.024,  0.009, 0.022)
+    t1_mid  = (side * 0.018,  0.022, 0.012)
+    t1_tip  = (side * 0.015,  0.032, 0.004)
+    t1_claw = (side * 0.014,  0.039, 0.000)
+    build_curved_toe(bm, t1_base, t1_mid, t1_tip, t1_claw, 0.0095, 0.0065)
+
+    t4_base = (side * 0.032,  0.009, 0.022)
+    t4_mid  = (side * 0.038,  0.024, 0.012)
+    t4_tip  = (side * 0.042,  0.034, 0.004)
+    t4_claw = (side * 0.044,  0.041, 0.000)
+    build_curved_toe(bm, t4_base, t4_mid, t4_tip, t4_claw, 0.0095, 0.0065)
+
+ub_s0 = [
+    bm.verts.new(( 0.000, -0.098, 0.372)),
+    bm.verts.new(( 0.020, -0.098, 0.354)),
+    bm.verts.new(( 0.000, -0.098, 0.336)),
+    bm.verts.new((-0.020, -0.098, 0.354))
+]
+ub_s1 = [
+    bm.verts.new(( 0.000, -0.124, 0.368)),
+    bm.verts.new(( 0.017, -0.120, 0.348)),
+    bm.verts.new(( 0.000, -0.116, 0.332)),
+    bm.verts.new((-0.017, -0.120, 0.348))
+]
+ub_s2 = [
+    bm.verts.new(( 0.000, -0.144, 0.344)),
+    bm.verts.new(( 0.012, -0.138, 0.328)),
+    bm.verts.new(( 0.000, -0.130, 0.316)),
+    bm.verts.new((-0.012, -0.138, 0.328))
+]
+ub_s3 = [
+    bm.verts.new(( 0.000, -0.148, 0.318)),
+    bm.verts.new(( 0.007, -0.143, 0.306)),
+    bm.verts.new(( 0.000, -0.137, 0.298)),
+    bm.verts.new((-0.007, -0.143, 0.306))
+]
+ub_tip = bm.verts.new((0.000, -0.142, 0.278))
+
+for j in range(4):
+    jn = (j + 1) % 4
+    f0 = bm.faces.new([ub_s0[j], ub_s0[jn], ub_s1[jn], ub_s1[j]])
+    f0.material_index = 5
+    f1 = bm.faces.new([ub_s1[j], ub_s1[jn], ub_s2[jn], ub_s2[j]])
+    f1.material_index = 5
+    f2 = bm.faces.new([ub_s2[j], ub_s2[jn], ub_s3[jn], ub_s3[j]])
+    f2.material_index = 5
+    f3 = bm.faces.new([ub_s3[j], ub_s3[jn], ub_tip])
+    f3.material_index = 6
+
+lb_s0 = [
+    bm.verts.new(( 0.000, -0.098, 0.334)),
+    bm.verts.new(( 0.014, -0.098, 0.326)),
+    bm.verts.new(( 0.000, -0.098, 0.314)),
+    bm.verts.new((-0.014, -0.098, 0.326))
+]
+lb_s1 = [
+    bm.verts.new(( 0.000, -0.118, 0.328)),
+    bm.verts.new(( 0.010, -0.115, 0.322)),
+    bm.verts.new(( 0.000, -0.112, 0.314)),
+    bm.verts.new((-0.010, -0.115, 0.322))
+]
+lb_tip = bm.verts.new((0.000, -0.126, 0.320))
+
+for j in range(4):
+    jn = (j + 1) % 4
+    f0 = bm.faces.new([lb_s0[j], lb_s0[jn], lb_s1[jn], lb_s1[j]])
+    f0.material_index = 5
+    f1 = bm.faces.new([lb_s1[j], lb_s1[jn], lb_tip])
+    f1.material_index = 5
+
+for side in [-1.0, 1.0]:
+    eye_center = mathutils.Vector((side * 0.040, -0.076, 0.368))
+    
+    n_dir = safe_normalize(mathutils.Vector((side * 0.65, -0.75, 0.08)))
+    r_dir = safe_normalize(mathutils.Vector((0.75, side * 0.65, 0.0)))
+    u_dir = safe_normalize(n_dir.cross(r_dir))
+    
+    ring_outer = []
+    ring_inner = []
+    r_out = 0.016
+    r_in = 0.012
+    for j in range(8):
+        theta = j * (2.0 * math.pi / 8.0)
+        co = math.cos(theta)
+        si = math.sin(theta)
+        pt_out = eye_center + (r_dir * co + u_dir * si) * r_out
+        pt_in  = eye_center + (r_dir * co + u_dir * si) * r_in + n_dir * 0.001
+        ring_outer.append(bm.verts.new(pt_out))
+        ring_inner.append(bm.verts.new(pt_in))
+        
+    for j in range(8):
+        jn = (j + 1) % 8
+        f = bm.faces.new([ring_outer[j], ring_outer[jn], ring_inner[jn], ring_inner[j]])
+        f.material_index = 9
+
+    sp_lat0 = []
+    sp_lat1 = []
+    for j in range(6):
+        theta = j * (2.0 * math.pi / 6.0)
+        co = math.cos(theta)
+        si = math.sin(theta)
+        pt_lat1 = eye_center + (r_dir * co + u_dir * si) * (r_in * 0.95) + n_dir * 0.002
+        pt_lat0 = eye_center + (r_dir * co + u_dir * si) * (r_in * 0.65) + n_dir * 0.0055
+        sp_lat1.append(bm.verts.new(pt_lat1))
+        sp_lat0.append(bm.verts.new(pt_lat0))
+        
+    sp_center = bm.verts.new(eye_center + n_dir * 0.0075)
+    for j in range(6):
+        jn = (j + 1) % 6
+        f0 = bm.faces.new([sp_lat1[j], sp_lat1[jn], sp_lat0[jn], sp_lat0[j]])
+        f0.material_index = 7
+        f1 = bm.faces.new([sp_lat0[j], sp_lat0[jn], sp_center])
+        f1.material_index = 7
+
+    spec_w = 0.0025
+    spec_c = eye_center - r_dir * (side * 0.003) + u_dir * 0.0035 + n_dir * 0.008
+    spec_v = [
+        bm.verts.new(spec_c - r_dir * spec_w - u_dir * spec_w),
+        bm.verts.new(spec_c + r_dir * spec_w - u_dir * spec_w),
+        bm.verts.new(spec_c + r_dir * spec_w + u_dir * spec_w),
+        bm.verts.new(spec_c - r_dir * spec_w + u_dir * spec_w)
+    ]
+    f_spec = bm.faces.new(spec_v)
+    f_spec.material_index = 8
+
+    chk_c = mathutils.Vector((side * 0.046, -0.062, 0.338))
+    chk_n = safe_normalize(mathutils.Vector((side * 0.85, -0.52, 0.05)))
+    chk_r = safe_normalize(mathutils.Vector((0.52, side * 0.85, 0.0)))
+    chk_u = safe_normalize(chk_n.cross(chk_r))
+    chk_verts = []
+    for j in range(6):
+        theta = j * (2.0 * math.pi / 6.0)
+        co = math.cos(theta)
+        si = math.sin(theta)
+        pt = chk_c + (chk_r * co + chk_u * si) * 0.014
+        chk_verts.append(bm.verts.new(pt))
+    chk_cen = bm.verts.new(chk_c + chk_n * 0.002)
+    for j in range(6):
+        jn = (j + 1) % 6
+        f = bm.faces.new([chk_verts[j], chk_verts[jn], chk_cen])
+        f.material_index = 2
+
+crest_defs = [
+    ( 0.000, -0.062, 0.412,  0.000, -0.032, 0.432,  0.000,  0.012, 0.412, 0.010),
+    (-0.014, -0.058, 0.410, -0.018, -0.028, 0.428, -0.016,  0.008, 0.408, 0.007),
+    ( 0.014, -0.058, 0.410,  0.018, -0.028, 0.428,  0.016,  0.008, 0.408, 0.007),
+    (-0.024, -0.052, 0.405, -0.028, -0.024, 0.420, -0.025,  0.002, 0.402, 0.005),
+    ( 0.024, -0.052, 0.405,  0.028, -0.024, 0.420,  0.025,  0.002, 0.402, 0.005)
+]
+for x0, y0, z0, x1, y1, z1, x2, y2, z2, width in crest_defs:
+    v0_l = bm.verts.new((x0 - width * 0.5, y0, z0))
+    v0_r = bm.verts.new((x0 + width * 0.5, y0, z0))
+    v1_l = bm.verts.new((x1 - width * 0.4, y1, z1))
+    v1_r = bm.verts.new((x1 + width * 0.4, y1, z1))
+    v2_tip = bm.verts.new((x2, y2, z2))
+    
+    f0 = bm.faces.new([v0_l, v0_r, v1_r, v1_l])
+    f0.material_index = 1
+    f1 = bm.faces.new([v1_l, v1_r, v2_tip])
+    f1.material_index = 1
+
+def build_curved_wing_plate(bm, spine_pts, widths, bulges, mat_face, mat_edge=None, side=1.0):
+    n_pts = len(spine_pts)
+    uppers = []
+    ridges = []
+    lowers = []
+    
+    for k in range(n_pts - 1):
+        p_curr = mathutils.Vector((side * spine_pts[k][0], spine_pts[k][1], spine_pts[k][2]))
+        p_next = mathutils.Vector((side * spine_pts[k + 1][0], spine_pts[k + 1][1], spine_pts[k + 1][2]))
+        tangent = safe_normalize(p_next - p_curr)
+        
+        out_norm = safe_normalize(mathutils.Vector((side * 0.9, 0.0, 0.1)))
+        up_norm  = safe_normalize(out_norm.cross(tangent))
+        real_out = safe_normalize(tangent.cross(up_norm))
+        
+        w = widths[k]
+        b = bulges[k]
+        
+        v_up    = p_curr + up_norm * (w * 0.5)
+        v_ridge = p_curr + real_out * b
+        v_low   = p_curr - up_norm * (w * 0.5)
+        
+        uppers.append(bm.verts.new(v_up))
+        ridges.append(bm.verts.new(v_ridge))
+        lowers.append(bm.verts.new(v_low))
+        
+    p_tip = mathutils.Vector((side * spine_pts[-1][0], spine_pts[-1][1], spine_pts[-1][2]))
+    v_tip = bm.verts.new(p_tip)
+    
+    for k in range(len(uppers) - 1):
+        if side > 0:
+            f_up = bm.faces.new([uppers[k], ridges[k], ridges[k + 1], uppers[k + 1]])
+            f_low = bm.faces.new([ridges[k], lowers[k], lowers[k + 1], ridges[k + 1]])
+        else:
+            f_up = bm.faces.new([uppers[k], uppers[k + 1], ridges[k + 1], ridges[k]])
+            f_low = bm.faces.new([ridges[k], ridges[k + 1], lowers[k + 1], lowers[k]])
+        f_up.material_index = mat_face
+        f_low.material_index = mat_edge if mat_edge is not None else mat_face
+
+    k_last = len(uppers) - 1
+    if side > 0:
+        f_tip_up = bm.faces.new([uppers[k_last], ridges[k_last], v_tip])
+        f_tip_low = bm.faces.new([ridges[k_last], lowers[k_last], v_tip])
+    else:
+        f_tip_up = bm.faces.new([uppers[k_last], v_tip, ridges[k_last]])
+        f_tip_low = bm.faces.new([ridges[k_last], v_tip, lowers[k_last]])
+    f_tip_up.material_index = mat_face
+    f_tip_low.material_index = mat_edge if mat_edge is not None else mat_face
+
+wing_plate_defs = [
+    (
+        [(0.065, -0.040, 0.285), (0.088, 0.005, 0.245), (0.090, 0.055, 0.200), (0.080, 0.100, 0.155), (0.072, 0.125, 0.135)],
+        [0.024, 0.042, 0.038, 0.026],
+        [0.003, 0.007, 0.006, 0.003],
+        0, 0
+    ),
+    (
+        [(0.070, -0.025, 0.265), (0.091, 0.025, 0.220), (0.088, 0.075, 0.170), (0.076, 0.125, 0.120), (0.066, 0.148, 0.100)],
+        [0.022, 0.038, 0.036, 0.024],
+        [0.003, 0.007, 0.006, 0.003],
+        0, 0
+    ),
+    (
+        [(0.068, -0.008, 0.242), (0.088, 0.045, 0.192), (0.080, 0.095, 0.140), (0.066, 0.145, 0.088), (0.054, 0.168, 0.068)],
+        [0.020, 0.034, 0.030, 0.020],
+        [0.003, 0.006, 0.005, 0.002],
+        3, 3
+    ),
+    (
+        [(0.064,  0.012, 0.215), (0.082, 0.065, 0.162), (0.072, 0.118, 0.112), (0.054, 0.165, 0.062), (0.042, 0.188, 0.040)],
+        [0.018, 0.030, 0.026, 0.016],
+        [0.002, 0.005, 0.004, 0.002],
+        3, 4
+    )
+]
+
+for side in [-1.0, 1.0]:
+    for spine, widths, bulges, m_face, m_edge in wing_plate_defs:
+        build_curved_wing_plate(bm, spine, widths, bulges, m_face, m_edge, side=side)
+
+tail_defs = [
+    ( 0.000, 0.068, 0.088,  0.000, 0.145,  0.035,  0.000, 0.218, -0.020, 0.034, 3),
+    (-0.015, 0.070, 0.092, -0.022, 0.140,  0.040, -0.030, 0.200, -0.010, 0.030, 3),
+    ( 0.015, 0.070, 0.092,  0.022, 0.140,  0.040,  0.030, 0.200, -0.010, 0.030, 3),
+    (-0.026, 0.072, 0.096, -0.038, 0.130,  0.050, -0.050, 0.178,  0.005, 0.026, 3),
+    ( 0.026, 0.072, 0.096,  0.038, 0.130,  0.050,  0.050, 0.178,  0.005, 0.026, 3),
+    ( 0.000, 0.062, 0.104,  0.000, 0.115,  0.065,  0.000, 0.160,  0.028, 0.032, 0)
+]
+
+for sx, sy, sz, mx, my, mz, ex, ey, ez, w, mat_id in tail_defs:
+    sv_l = bm.verts.new((sx - w * 0.3, sy, sz))
+    sv_r = bm.verts.new((sx + w * 0.3, sy, sz))
+    mv_l = bm.verts.new((mx - w * 0.5, my, mz))
+    mv_r = bm.verts.new((mx + w * 0.5, my, mz))
+    ev_l = bm.verts.new((ex - w * 0.3, ey, ez))
+    ev_r = bm.verts.new((ex + w * 0.3, ey, ez))
+    tip_v = bm.verts.new((ex, ey + 0.016, ez - 0.012))
+    
+    f0 = bm.faces.new([sv_l, sv_r, mv_r, mv_l])
+    f0.material_index = mat_id
+    f1 = bm.faces.new([mv_l, mv_r, ev_r, ev_l])
+    f1.material_index = mat_id
+    f2 = bm.faces.new([ev_l, ev_r, tip_v])
+    f2.material_index = mat_id
+
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+for f in bm.faces:
+    f.smooth = True
+
+mesh = bpy.data.meshes.new("KiwiMesh")
+bm.to_mesh(mesh)
+bm.free()
+
+obj = bpy.data.objects.new("Kiwi", mesh)
+bpy.context.scene.collection.objects.link(obj)
+
+for mat in master_materials:
+    obj.data.materials.append(mat)
+
+bpy.context.view_layer.objects.active = obj
+obj.select_set(True)
+
+subsurf = obj.modifiers.new(name="Subdivision", type='SUBSURF')
+subsurf.levels = 2
+subsurf.render_levels = 2
+
+bpy.ops.object.modifier_apply(modifier=subsurf.name)
+
+obj.data.polygons.foreach_set('use_smooth', [True] * len(obj.data.polygons))
+obj.data.update()
+
+tris_count = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+
+bpy.ops.object.select_all(action='DESELECT')
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+try:
+    bpy.ops.export_scene.fbx(
+        filepath=output_path,
+        use_selection=True,
+        axis_forward='-Z',
+        axis_up='Y',
+        mesh_smooth_type='FACE'
+    )
+except Exception:
+    bpy.ops.export_scene.fbx(filepath=output_path, use_selection=True)
+
+png_path = os.path.splitext(output_path)[0] + ".png"
+
+scene = bpy.context.scene
+scene.render.resolution_x = 900
+scene.render.resolution_y = 900
+scene.render.resolution_percentage = 100
+scene.render.filepath = png_path
+scene.render.image_settings.file_format = 'PNG'
+
+available_engines = scene.render.bl_rna.properties['engine'].enum_items.keys()
+if 'BLENDER_EEVEE' in available_engines:
+    scene.render.engine = 'BLENDER_EEVEE'
+elif 'BLENDER_EEVEE_NEXT' in available_engines:
+    scene.render.engine = 'BLENDER_EEVEE_NEXT'
+
+world = bpy.data.worlds.new("StudioWorld")
+scene.world = world
+world.use_nodes = True
+bg_node = world.node_tree.nodes.get("Background")
+if bg_node:
+    bg_node.inputs["Color"].default_value = (0.75, 0.75, 0.75, 1.0)
+    bg_node.inputs["Strength"].default_value = 0.7
+
+key_light_data = bpy.data.lights.new(name="KeySun", type='SUN')
+key_light_data.energy = 4.0
+key_light_data.color = (1.0, 0.98, 0.95)
+key_light = bpy.data.objects.new("KeySun", key_light_data)
+key_light.location = (-0.8, -1.0, 1.0)
+sun_dir = safe_normalize(mathutils.Vector((0.8, 1.0, -0.78)))
+key_light.rotation_euler = sun_dir.to_track_quat('-Z', 'Y').to_euler()
+scene.collection.objects.link(key_light)
+
+fill_light_data = bpy.data.lights.new(name="SoftFill", type='AREA')
+fill_light_data.energy = 25.0
+fill_light_data.size = 0.4
+fill_light_data.color = (0.92, 0.95, 1.0)
+fill_light = bpy.data.objects.new("SoftFill", fill_light_data)
+fill_light.location = (0.7, -0.7, 0.35)
+fill_dir = safe_normalize(mathutils.Vector((-0.7, 0.7, -0.13)))
+fill_light.rotation_euler = fill_dir.to_track_quat('-Z', 'Y').to_euler()
+scene.collection.objects.link(fill_light)
+
+cam_data = bpy.data.cameras.new(name="Camera")
+cam_data.lens = 50
+cam_obj = bpy.data.objects.new("Camera", cam_data)
+cam_obj.location = (-0.404, -0.541, 0.467)
+scene.collection.objects.link(cam_obj)
+scene.camera = cam_obj
+
+cam_target = bpy.data.objects.new("CamTarget", None)
+cam_target.location = (0.0, 0.01, 0.21)
+scene.collection.objects.link(cam_target)
+
+track_constraint = cam_obj.constraints.new(type='TRACK_TO')
+track_constraint.target = cam_target
+track_constraint.track_axis = 'TRACK_NEGATIVE_Z'
+track_constraint.up_axis = 'UP_Y'
+
+bpy.ops.render.render(write_still=True)
+
+print("TRIS", tris_count)

@@ -187,28 +187,46 @@ namespace AcrophobiaVR.EditorTools
             // A helicopter thunders past while you're in the middle of the rope bridge - crouch for the downdraft!
             var heli = Group("Helicopter", env);
             var heliBody = Group("Body", heli.transform).transform;
-            var heliRed = Mat("HeliRed", new Color(0.75f, 0.12f, 0.1f), 0.7f, 0.3f);
-            var heliDark = Mat("HeliDark", new Color(0.08f, 0.08f, 0.09f), 0.5f, 0.6f);
-            Prim(PrimitiveType.Capsule, "Cabin", heliBody, Vector3.zero, new Vector3(1.7f, 1.9f, 1.7f), heliRed, false, false, new Vector3(90f, 0f, 0f));
-            Sphere("Canopy", heliBody, new Vector3(0f, 0.15f, 1.35f), 1.5f, Mat("HeliGlass", new Color(0.15f, 0.22f, 0.3f), 0.95f, 0.2f), false, false);
-            Box("TailBoom", heliBody, new Vector3(0f, 0.35f, -3.4f), new Vector3(0.35f, 0.35f, 4.2f), heliRed, false, false);
-            Box("TailFin", heliBody, new Vector3(0f, 1.0f, -5.35f), new Vector3(0.12f, 1.3f, 0.8f), heliRed, false, false);
-            foreach (var sx in new[] { -0.85f, 0.85f })
+            // Gemini-made helicopter (Body + separately spinning MainRotor / TailRotor); primitive fallback if missing.
+            var heliModel = Model("Helicopter", heliBody, new Vector3(0f, -1.3f, 0f), 3.3f);
+            if (heliModel != null)
             {
-                Box("Skid", heliBody, new Vector3(sx, -1.25f, 0.2f), new Vector3(0.09f, 0.09f, 3.4f), heliDark, false, false);
-                Bar("Strut", heliBody, new Vector3(sx, -1.25f, 0.9f), new Vector3(sx * 0.6f, -0.7f, 0.9f), 0.07f, heliDark, false, false);
-                Bar("Strut", heliBody, new Vector3(sx, -1.25f, -0.5f), new Vector3(sx * 0.6f, -0.7f, -0.5f), 0.07f, heliDark, false, false);
+                foreach (var part in heliModel.GetComponentsInChildren<Transform>(true))
+                {
+                    if (part.name != "MainRotor" && part.name != "TailRotor") continue;
+                    // Spin about whichever local axis points up (main rotor) or sideways (tail rotor) after import.
+                    Vector3 want = part.name == "MainRotor" ? Vector3.up : heliBody.right;
+                    Vector3 local = part.InverseTransformDirection(want);
+                    Vector3 axis = Mathf.Abs(local.x) > Mathf.Abs(local.y) && Mathf.Abs(local.x) > Mathf.Abs(local.z) ? Vector3.right
+                        : (Mathf.Abs(local.y) > Mathf.Abs(local.z) ? Vector3.up : Vector3.forward);
+                    part.gameObject.AddComponent<Spinner>().degreesPerSecond = axis * (part.name == "MainRotor" ? 1100f : 1600f);
+                }
             }
-            var mainRotor = Group("MainRotor", heliBody).transform;
-            mainRotor.localPosition = new Vector3(0f, 1.15f, 0.2f);
-            Cyl("Hub", mainRotor, new Vector3(0f, -0.15f, 0f), 0.18f, 0.3f, heliDark, false, false);
-            Box("BladeA", mainRotor, Vector3.zero, new Vector3(10f, 0.04f, 0.32f), heliDark, false, false);
-            Box("BladeB", mainRotor, Vector3.zero, new Vector3(0.32f, 0.04f, 10f), heliDark, false, false);
-            mainRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(0f, 1100f, 0f);
-            var tailRotor = Group("TailRotor", heliBody).transform;
-            tailRotor.localPosition = new Vector3(0.12f, 1.0f, -5.5f);
-            Box("TailBlade", tailRotor, Vector3.zero, new Vector3(0.04f, 1.5f, 0.14f), heliDark, false, false);
-            tailRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(1600f, 0f, 0f);
+            else
+            {
+                var heliRed = Mat("HeliRed", new Color(0.75f, 0.12f, 0.1f), 0.7f, 0.3f);
+                var heliDark = Mat("HeliDark", new Color(0.08f, 0.08f, 0.09f), 0.5f, 0.6f);
+                Prim(PrimitiveType.Capsule, "Cabin", heliBody, Vector3.zero, new Vector3(1.7f, 1.9f, 1.7f), heliRed, false, false, new Vector3(90f, 0f, 0f));
+                Sphere("Canopy", heliBody, new Vector3(0f, 0.15f, 1.35f), 1.5f, Mat("HeliGlass", new Color(0.15f, 0.22f, 0.3f), 0.95f, 0.2f), false, false);
+                Box("TailBoom", heliBody, new Vector3(0f, 0.35f, -3.4f), new Vector3(0.35f, 0.35f, 4.2f), heliRed, false, false);
+                Box("TailFin", heliBody, new Vector3(0f, 1.0f, -5.35f), new Vector3(0.12f, 1.3f, 0.8f), heliRed, false, false);
+                foreach (var sx in new[] { -0.85f, 0.85f })
+                {
+                    Box("Skid", heliBody, new Vector3(sx, -1.25f, 0.2f), new Vector3(0.09f, 0.09f, 3.4f), heliDark, false, false);
+                    Bar("Strut", heliBody, new Vector3(sx, -1.25f, 0.9f), new Vector3(sx * 0.6f, -0.7f, 0.9f), 0.07f, heliDark, false, false);
+                    Bar("Strut", heliBody, new Vector3(sx, -1.25f, -0.5f), new Vector3(sx * 0.6f, -0.7f, -0.5f), 0.07f, heliDark, false, false);
+                }
+                var mainRotor = Group("MainRotor", heliBody).transform;
+                mainRotor.localPosition = new Vector3(0f, 1.15f, 0.2f);
+                Cyl("Hub", mainRotor, new Vector3(0f, -0.15f, 0f), 0.18f, 0.3f, heliDark, false, false);
+                Box("BladeA", mainRotor, Vector3.zero, new Vector3(10f, 0.04f, 0.32f), heliDark, false, false);
+                Box("BladeB", mainRotor, Vector3.zero, new Vector3(0.32f, 0.04f, 10f), heliDark, false, false);
+                mainRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(0f, 1100f, 0f);
+                var tailRotor = Group("TailRotor", heliBody).transform;
+                tailRotor.localPosition = new Vector3(0.12f, 1.0f, -5.5f);
+                Box("TailBlade", tailRotor, Vector3.zero, new Vector3(0.04f, 1.5f, 0.14f), heliDark, false, false);
+                tailRotor.gameObject.AddComponent<Spinner>().degreesPerSecond = new Vector3(1600f, 0f, 0f);
+            }
             Sphere("Beacon", heliBody, new Vector3(0f, 0.95f, -1.6f), 0.18f, Glow("BeaconRed", new Color(1f, 0.2f, 0.15f), 4f), false, false);
             var heliEngine = Group("Engine", heliBody).AddComponent<SoundEmitter>();
             heliEngine.kind = EmitterKind.Rotor;
@@ -240,19 +258,23 @@ namespace AcrophobiaVR.EditorTools
             var cat = Group("Cat", game);
             cat.transform.position = new Vector3(50f, H + 0.02f, 11.5f);
             cat.transform.rotation = Quaternion.Euler(0, 180, 0);
-            var fur = Mat("CatFur", new Color(0.95f, 0.6f, 0.25f));
-            var furWhite = Mat("CatWhite", new Color(0.98f, 0.96f, 0.92f));
-            Box("Body", cat.transform, new Vector3(0, 0.16f, 0), new Vector3(0.2f, 0.18f, 0.38f), fur, false, false);
-            Sphere("Head", cat.transform, new Vector3(0, 0.3f, 0.2f), 0.18f, fur, false, false);
-            Sphere("Muzzle", cat.transform, new Vector3(0, 0.27f, 0.28f), 0.08f, furWhite, false, false);
-            Prim(PrimitiveType.Cube, "EarL", cat.transform, new Vector3(-0.05f, 0.4f, 0.2f), new Vector3(0.05f, 0.07f, 0.02f), fur, false, false, new Vector3(0, 0, 20));
-            Prim(PrimitiveType.Cube, "EarR", cat.transform, new Vector3(0.05f, 0.4f, 0.2f), new Vector3(0.05f, 0.07f, 0.02f), fur, false, false, new Vector3(0, 0, -20));
-            var tail = Bar("Tail", cat.transform, new Vector3(0, 0.2f, -0.18f), new Vector3(0, 0.42f, -0.32f), 0.035f, fur, false, false);
-            tail.AddComponent<Spinner>().degreesPerSecond = new Vector3(0, 0, 60f);
-            tail.GetComponent<Spinner>().oscillate = true;
-            tail.GetComponent<Spinner>().oscillateAmplitude = 20f;
-            for (int leg = 0; leg < 4; leg++)
-                Box("Leg", cat.transform, new Vector3(leg % 2 == 0 ? -0.07f : 0.07f, 0.04f, leg < 2 ? 0.12f : -0.12f), new Vector3(0.05f, 0.1f, 0.05f), furWhite, false, false);
+            // Gemini-made model; primitive fallback if the file is missing.
+            if (Model("Mittens", cat.transform, Vector3.zero, 0.3f) == null)
+            {
+                var fur = Mat("CatFur", new Color(0.95f, 0.6f, 0.25f));
+                var furWhite = Mat("CatWhite", new Color(0.98f, 0.96f, 0.92f));
+                Box("Body", cat.transform, new Vector3(0, 0.16f, 0), new Vector3(0.2f, 0.18f, 0.38f), fur, false, false);
+                Sphere("Head", cat.transform, new Vector3(0, 0.3f, 0.2f), 0.18f, fur, false, false);
+                Sphere("Muzzle", cat.transform, new Vector3(0, 0.27f, 0.28f), 0.08f, furWhite, false, false);
+                Prim(PrimitiveType.Cube, "EarL", cat.transform, new Vector3(-0.05f, 0.4f, 0.2f), new Vector3(0.05f, 0.07f, 0.02f), fur, false, false, new Vector3(0, 0, 20));
+                Prim(PrimitiveType.Cube, "EarR", cat.transform, new Vector3(0.05f, 0.4f, 0.2f), new Vector3(0.05f, 0.07f, 0.02f), fur, false, false, new Vector3(0, 0, -20));
+                var tail = Bar("Tail", cat.transform, new Vector3(0, 0.2f, -0.18f), new Vector3(0, 0.42f, -0.32f), 0.035f, fur, false, false);
+                tail.AddComponent<Spinner>().degreesPerSecond = new Vector3(0, 0, 60f);
+                tail.GetComponent<Spinner>().oscillate = true;
+                tail.GetComponent<Spinner>().oscillateAmplitude = 20f;
+                for (int leg = 0; leg < 4; leg++)
+                    Box("Leg", cat.transform, new Vector3(leg % 2 == 0 ? -0.07f : 0.07f, 0.04f, leg < 2 ? 0.12f : -0.12f), new Vector3(0.05f, 0.1f, 0.05f), furWhite, false, false);
+            }
             var catCol = cat.AddComponent<BoxCollider>();
             catCol.size = new Vector3(0.3f, 0.45f, 0.6f);
             catCol.center = new Vector3(0, 0.22f, 0.02f);

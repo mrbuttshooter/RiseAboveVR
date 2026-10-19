@@ -20,7 +20,7 @@ namespace AcrophobiaVR.EditorTools
         /// <summary>Packed URP metallic/smoothness masks are written here (shared with ProceduralTextures).</summary>
         public const string MaskDir = ProceduralTextures.Dir;
 
-        const int TextureMaxSize = 1024;
+        const int TextureMaxSize = 2048; // PC; Android gets its own 1024 override
         const int SkyMaxSize = 2048;
         const string AndroidPlatform = "Android";
 
@@ -51,6 +51,8 @@ namespace AcrophobiaVR.EditorTools
                 case Surface.Grate:
                 case Surface.RoofGravel:
                 case Surface.Tiles:
+                case Surface.Brick:
+                case Surface.Plaster:
                     return true;
                 default:
                     return false;
@@ -68,10 +70,12 @@ namespace AcrophobiaVR.EditorTools
                 case Surface.Grass: return new Vector2(6f, 6f);
                 case Surface.Dirt: return new Vector2(4f, 4f);
                 case Surface.Wood: return new Vector2(2f, 2f);
-                case Surface.Metal: return new Vector2(2f, 2f);
+                case Surface.Metal: return new Vector2(2.2f, 2.2f);   // rusty_painted_metal scan
                 case Surface.Grate: return new Vector2(1f, 1f);
                 case Surface.RoofGravel: return new Vector2(3f, 3f);
                 case Surface.Tiles: return new Vector2(2f, 2f);
+                case Surface.Brick: return new Vector2(2.5f, 2.5f);   // red_bricks_04 scan
+                case Surface.Plaster: return new Vector2(3f, 3f);     // beige_wall_001 scan
                 default: return ProceduralTextures.TileMeters(s);
             }
         }
@@ -258,7 +262,7 @@ namespace AcrophobiaVR.EditorTools
                 imp.textureCompression = TextureImporterCompression.Compressed;
                 changed = true;
             }
-            changed |= SetAndroidOverride(imp, TextureMaxSize, TextureImporterFormat.ASTC_6x6);
+            changed |= SetAndroidOverride(imp, 1024, TextureImporterFormat.ASTC_6x6);
             if (changed) imp.SaveAndReimport();
         }
 
@@ -275,7 +279,7 @@ namespace AcrophobiaVR.EditorTools
             return true;
         }
 
-        static bool IsMetallic(Surface s) => s == Surface.Metal || s == Surface.Grate;
+        static bool IsMetallic(Surface s) => s == Surface.Grate; // Metal is now painted steel (paint + rust are not metallic)
 
         /// <summary>Loads (building once if missing) Generated/Textures/mask_&lt;Surface&gt;.png.</summary>
         static Texture2D GetOrBuildMask(Surface s, string roughPath)

@@ -1,0 +1,8 @@
+Third-party prop models (Objaverse dataset, originally on Sketchfab), used under their Creative Commons licence; converted to FBX and resized.
+Container20 / SiteCabin were generated for this project with Gemini (Argon).
+
+PatioUmbrella.fbx: "Umbrella" by TahirNilin - CC Attribution - https://sketchfab.com/3d-models/40d7491a077a4b4caa91794844f8d0b5
+TrafficLight.fbx: "traffic light + animation" by Daniel Brück - CC Attribution - https://sketchfab.com/3d-models/30f361478c8143fbb463dcf9b2a0cb61
+Guitar.fbx: "Old Acoustic Guitar" by Raphael Escamilla - CC Attribution - https://sketchfab.com/3d-models/a1ad2734fdf14d0b90e90aea8a6c1dad
+Fountain.fbx: "Fantasy Fountain" by Jayson Stauffer - CC Attribution - https://sketchfab.com/3d-models/0d9f7c9353fa4596984e264e0ecf2067
+WaterTower.fbx: "Water Tower" by an anonymous gothamite - CC Attribution - https://sketchfab.com/3d-models/e5b70b26a4fc4c19a610497f6a925661

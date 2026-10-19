@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace AcrophobiaVR.EditorTools
 {
-    public enum Surface { Concrete, Asphalt, Pavement, Grass, Dirt, Wood, Metal, Grate, RoofGravel, Tiles, BrickFacade, OfficeFacade, GlassFacade, PlasterFacade }
+    public enum Surface { Concrete, Asphalt, Pavement, Grass, Dirt, Wood, Metal, Grate, RoofGravel, Tiles, BrickFacade, OfficeFacade, GlassFacade, PlasterFacade, Brick, Plaster }
 
     public struct TextureSet
     {
@@ -24,6 +24,9 @@ namespace AcrophobiaVR.EditorTools
     public static class ProceduralTextures
     {
         public const string Dir = "Assets/AcrophobiaVR/Generated/Textures";
+        /// <summary>CC0 Poly Haven photo scans (2k) that give the facades real brick / render / concrete detail.</summary>
+        public const string PhotoDir = "Assets/AcrophobiaVR/ThirdParty/PolyHaven/FacadeSource";
+        const int FacadeRes = 2048;
 
         static readonly Dictionary<Surface, TextureSet> Cache = new Dictionary<Surface, TextureSet>();
         static readonly Color Warm = new Color(1f, 0.82f, 0.55f, 1f);
@@ -77,7 +80,7 @@ namespace AcrophobiaVR.EditorTools
                 if (set.albedo == null)
                     set.albedo = Save(aPath, ToColor32(buf.a, surface == Surface.Grate), buf.n, Kind.Albedo, surface);
                 if (set.normal == null)
-                    set.normal = Save(nPath, NormalFromHeight(buf.h, buf.n, buf.strength), buf.n, Kind.Normal, surface);
+                    set.normal = Save(nPath, NormalFromHeight(buf.h, buf.n, buf.strength * Mathf.Sqrt(buf.n / 512f)), buf.n, Kind.Normal, surface);
                 if (facade && set.emission == null)
                     set.emission = Save(ePath, ToColor32(buf.e, false), buf.n, Kind.Emission, surface);
             }
@@ -102,7 +105,7 @@ namespace AcrophobiaVR.EditorTools
             }
         }
 
-        static string PathFor(Surface s, string suffix) => Dir + "/" + s + "_" + suffix + ".png";
+        static string PathFor(Surface s, string suffix) => Dir + "/" + s + (IsFacade(s) ? "_v3_" : "_") + suffix + ".png";
 
         static string FullPath(string assetPath) =>
             Path.Combine(Path.GetDirectoryName(Application.dataPath), assetPath);
@@ -180,8 +183,16 @@ namespace AcrophobiaVR.EditorTools
             imp.mipmapEnabled = true;
             imp.anisoLevel = 4;
             imp.filterMode = FilterMode.Trilinear;
-            imp.maxTextureSize = 512;
+            imp.maxTextureSize = IsFacade(s) ? FacadeRes : 512;
             imp.textureCompression = TextureImporterCompression.Compressed;
+            if (IsFacade(s))
+            {
+                var android = imp.GetPlatformTextureSettings("Android");
+                android.overridden = true;
+                android.maxTextureSize = 1024;
+                android.format = TextureImporterFormat.ASTC_6x6;
+                imp.SetPlatformTextureSettings(android);
+            }
             imp.SaveAndReimport();
         }
 
@@ -320,6 +331,53 @@ namespace AcrophobiaVR.EditorTools
             }
         }
 
+        /// <summary>A photo-scanned texture read from <see cref="PhotoDir"/>, sampled bilinearly with wrap-around.</summary>
+        sealed class Photo
+        {
+            readonly Color[] px;
+            readonly int w, h;
+            /// <summary>Mean luminance, used to normalise detail so the material tint still sets the colour.</summary>
+            public readonly float mean;
+
+            Photo(Color[] px, int w, int h)
+            {
+                this.px = px; this.w = w; this.h = h;
+                double sum = 0;
+                int count = 0;
+                for (int i = 0; i < px.Length; i += 7) { sum += Luma(px[i]); count++; }
+                mean = Mathf.Max(0.05f, (float)(sum / Mathf.Max(1, count)));
+            }
+
+            public static Photo Load(string file)
+            {
+                string path = FullPath(PhotoDir + "/" + file);
+                if (!File.Exists(path)) return null;
+                var t = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!t.LoadImage(File.ReadAllBytes(path))) { UnityEngine.Object.DestroyImmediate(t); return null; }
+                var p = new Photo(t.GetPixels(), t.width, t.height);
+                UnityEngine.Object.DestroyImmediate(t);
+                return p;
+            }
+
+            static float Luma(Color c) => 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+
+            /// <summary>x / y in texture repeats (any value; wraps).</summary>
+            public Color Sample(float x, float y)
+            {
+                float fx = (x - Mathf.Floor(x)) * w - 0.5f, fy = (y - Mathf.Floor(y)) * h - 0.5f;
+                int x0 = Mathf.FloorToInt(fx), y0 = Mathf.FloorToInt(fy);
+                float tx = fx - x0, ty = fy - y0;
+                int xa = (x0 % w + w) % w, xb = (xa + 1) % w, ya = (y0 % h + h) % h, yb = (ya + 1) % h;
+                Color c0 = Color.Lerp(px[ya * w + xa], px[ya * w + xb], tx);
+                Color c1 = Color.Lerp(px[yb * w + xa], px[yb * w + xb], tx);
+                return Color.Lerp(c0, c1, ty);
+            }
+
+            /// <summary>Luminance relative to the photo's mean (1 = average).</summary>
+            public float Detail(float x, float y) => Luma(Sample(x, y)) / mean;
+            public float Value(float x, float y) => Sample(x, y).r;
+        }
+
         delegate void PixelFn(int x, int y, float u, float v, int i);
 
         static void Each(Buf buf, PixelFn fn)
@@ -335,7 +393,8 @@ namespace AcrophobiaVR.EditorTools
 
         static Buf Generate(Surface s)
         {
-            int res = s == Surface.Grate ? 256 : 512;
+            // Facades are seen up close from balconies and ledges: 2048 px on PC (the Quest import override halves it).
+            int res = s == Surface.Grate ? 256 : IsFacade(s) ? FacadeRes : 512;
             var b = new Buf(res, IsFacade(s));
             switch (s)
             {
@@ -353,6 +412,8 @@ namespace AcrophobiaVR.EditorTools
                 case Surface.OfficeFacade: OfficeFacade(b); break;
                 case Surface.GlassFacade: GlassFacade(b); break;
                 case Surface.PlasterFacade: PlasterFacade(b); break;
+                case Surface.Brick:
+                case Surface.Plaster: Concrete(b); break; // fallbacks only: these normally use the photo-scanned sets
             }
             return b;
         }
@@ -657,6 +718,10 @@ namespace AcrophobiaVR.EditorTools
             float soft = W / b.n;
             bool[] lit = PickLit(cols * rows, 201);
             b.strength = 1.2f;
+            // Photo brickwork (red_bricks_04, a 2.5 m scan) repeated 2 x 3 times per 6 x 7 m tile so it stays seamless.
+            var brickPhoto = Photo.Load("red_bricks_04_diff.jpg");
+            var brickDisp = Photo.Load("red_bricks_04_disp.jpg");
+            const float repX = 2f, repY = 3f;
             Each(b, (x, y, u, v, i) =>
             {
                 float mx = u * W, my = v * H;
@@ -679,6 +744,12 @@ namespace AcrophobiaVR.EditorTools
                 float low = Fbm(u, v, 3, 4, 3, 205);
                 float wallL = 0.70f + tone * 0.20f - burnt * 0.14f + (face - 0.5f) * 0.10f + (low - 0.5f) * 0.10f;
                 wallL = Mathf.Lerp(wallL, 0.93f + (face - 0.5f) * 0.05f, mortar);
+                float photoH = -1f;
+                if (brickPhoto != null)
+                {
+                    wallL = Mathf.Clamp(brickPhoto.Detail(u * repX, v * repY) * 0.80f, 0.2f, 1.15f) + (low - 0.5f) * 0.08f;
+                    if (brickDisp != null) photoH = brickDisp.Value(u * repX, v * repY);
+                }
                 if (lx > wx0 && lx < wx1 && ly < wy0 - 0.09f) // rain streaks below the sill
                 {
                     float fade = SS(wy0 - 1.3f, wy0 - 0.1f, ly) * SS(wx0, wx0 + 0.1f, lx) * SS(wx1, wx1 - 0.1f, lx);
@@ -687,7 +758,7 @@ namespace AcrophobiaVR.EditorTools
                 }
                 Color alb = Grey(wallL);
                 Color emi = Color.black;
-                float hgt = Mathf.Lerp(0.70f + face * 0.08f, 0.50f, mortar);
+                float hgt = photoH >= 0f ? 0.45f + photoH * 0.35f : Mathf.Lerp(0.70f + face * 0.08f, 0.50f, mortar);
 
                 // stone lintel and sill
                 float stoneL = 0.90f + (face - 0.5f) * 0.06f;
@@ -721,6 +792,9 @@ namespace AcrophobiaVR.EditorTools
             float soft = W / b.n;
             bool[] lit = PickLit(cols * rows, 301);
             b.strength = 1.2f;
+            // Photo concrete (concrete_wall_008, a 2.7 m scan) repeated 3 x 3 times per 8 x 7 m tile.
+            var panelPhoto = Photo.Load("concrete_wall_008_diff.jpg");
+            var panelDisp = Photo.Load("concrete_wall_008_disp.jpg");
             Each(b, (x, y, u, v, i) =>
             {
                 float mx = u * W, my = v * H;
@@ -733,6 +807,11 @@ namespace AcrophobiaVR.EditorTools
                 // spandrel panels (neutral wall area) with panel seams
                 float l = 0.84f + (face - 0.5f) * 0.06f + (low - 0.5f) * 0.10f;
                 float hgt = 0.65f + face * 0.04f;
+                if (panelPhoto != null)
+                {
+                    l = Mathf.Clamp((1f + (panelPhoto.Detail(u * 3f, v * 3f) - 1f) * 2f) * 0.84f, 0.3f, 1.1f) + (low - 0.5f) * 0.06f;
+                    if (panelDisp != null) hgt = 0.6f + panelDisp.Value(u * 3f, v * 3f) * 0.12f;
+                }
                 float seamD = Mathf.Min(Mathf.Min(lx, cw - lx), Mathf.Min(Mathf.Min(ly, ch - ly), Mathf.Abs(ly - 0.5f)));
                 float seam = 1f - Cov(seamD - 0.006f, soft);
                 l = Mathf.Lerp(l, 0.55f, seam);
@@ -816,6 +895,9 @@ namespace AcrophobiaVR.EditorTools
             float soft = W / b.n;
             bool[] lit = PickLit(cols * rows, 501);
             b.strength = 1.3f;
+            // Photo render (beige_wall_001, a 3 m scan) repeated 2 x 2 times per 6 x 7 m tile.
+            var renderPhoto = Photo.Load("beige_wall_001_diff.jpg");
+            var renderDisp = Photo.Load("beige_wall_001_disp.jpg");
             Each(b, (x, y, u, v, i) =>
             {
                 float mx = u * W, my = v * H;
@@ -829,6 +911,11 @@ namespace AcrophobiaVR.EditorTools
                 float low = Fbm(u, v, 3, 3, 4, 504);
                 float l = 0.88f + (stucco - 0.5f) * 0.06f + (grit - 0.5f) * 0.03f + (low - 0.5f) * 0.14f;
                 float hgt = 0.6f + stucco * 0.10f + grit * 0.03f;
+                if (renderPhoto != null)
+                {
+                    l = Mathf.Clamp((1f + (renderPhoto.Detail(u * 2f, v * 2f) - 1f) * 2.5f) * 0.88f, 0.35f, 1.1f) + (low - 0.5f) * 0.10f;
+                    if (renderDisp != null) hgt = 0.6f + renderDisp.Value(u * 2f, v * 2f) * 0.15f;
+                }
                 if (lx > wx0 - 0.2f && lx < wx1 + 0.2f && ly < wy0 - 0.1f) // dirt streaks under the sill
                 {
                     float fade = SS(wy0 - 1.6f, wy0 - 0.1f, ly) * SS(wx0 - 0.2f, wx0, lx) * SS(wx1 + 0.2f, wx1, lx);

@@ -23,7 +23,7 @@ namespace AcrophobiaVR.EditorTools
         /// <summary>Material names that get procedural PBR textures (albedo + normal, facades also lit-window emission).</summary>
         static readonly Dictionary<string, Surface> SurfaceFor = new Dictionary<string, Surface>
         {
-            { "Concrete", Surface.Concrete }, { "RoofGrey", Surface.Concrete }, { "Stone", Surface.Concrete }, { "CafeWall", Surface.Concrete },
+            { "Concrete", Surface.Concrete }, { "RoofGrey", Surface.Concrete }, { "Stone", Surface.Concrete }, { "CafeWall", Surface.Brick }, { "PlasterWall", Surface.Plaster },
             { "Asphalt", Surface.Asphalt }, { "Pavement", Surface.Pavement }, { "Path", Surface.Pavement },
             { "Grass", Surface.Grass }, { "MeadowGrass", Surface.Grass }, { "Dirt", Surface.Dirt },
             { "Deck", Surface.Wood }, { "Plank", Surface.Wood }, { "Bench", Surface.Wood }, { "BenchWood", Surface.Wood }, { "DoorWood", Surface.Wood }, { "TankWood", Surface.Wood },
@@ -339,17 +339,253 @@ namespace AcrophobiaVR.EditorTools
             // Keep the importer's own root rotation (Blender files often carry a -90 X axis fix).
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * ModelImportFix * prefab.transform.localRotation;
             go.transform.localPosition = Vector3.zero;
-            go.transform.localScale = Vector3.one;
+            // Keep the importer's root scale too (Blender files with empties come in at 100 x 0.01).
+            go.transform.localScale = prefab.transform.localScale;
             foreach (var c in go.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
             foreach (var t in go.GetComponentsInChildren<Transform>(true)) GameObjectUtility.SetStaticEditorFlags(t.gameObject, 0);
 
             // Normalise size and sit it on the ground point.
             Bounds b = WorldBounds(go);
-            if (b.size.y > 0.0001f) go.transform.localScale = Vector3.one * (targetHeight / (b.size.y / Mathf.Max(0.0001f, parent.lossyScale.y)));
+            if (targetHeight > 0f && b.size.y > 0.0001f) go.transform.localScale *= targetHeight / (b.size.y / Mathf.Max(0.0001f, parent.lossyScale.y));
             b = WorldBounds(go);
             Vector3 groundWorld = parent.TransformPoint(localPos);
             go.transform.position += new Vector3(groundWorld.x - b.center.x, groundWorld.y - b.min.y, groundWorld.z - b.center.z);
             return go;
+        }
+
+        public const string PolyModelFolder = "Assets/AcrophobiaVR/ThirdParty/PolyHaven/Models/";
+
+        /// <summary>
+        /// Places a CC0 Poly Haven photo-scanned prop (ThirdParty/PolyHaven/Models/{id}/{id}.fbx) at real-world size,
+        /// with a URP Lit material built from its diffuse + normal maps. Returns null if the asset is missing.
+        /// </summary>
+        public static GameObject PolyProp(string id, Transform parent, Vector3 localPos, float yaw = 0f, float scale = 1f, float targetHeight = 0f, int variant = 0)
+        {
+            string dir = PolyModelFolder + id + "/";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(dir + id + ".fbx");
+            if (prefab == null) return null;
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            go.name = id + " (scan)";
+            go.transform.SetParent(parent, false);
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * prefab.transform.localRotation;
+            go.transform.localScale = prefab.transform.localScale * scale;
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(c);
+            KeepOneVariant(go, variant);
+
+            var diff = AssetDatabase.LoadAssetAtPath<Texture2D>(dir + id + "_diff.jpg");
+            if (diff != null)
+            {
+                string matPath = "Assets/AcrophobiaVR/Generated/Materials/PH_" + id + ".mat";
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+                if (mat == null)
+                {
+                    mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                    AssetDatabase.CreateAsset(mat, matPath);
+                }
+                mat.SetTexture("_BaseMap", diff);
+                mat.SetColor("_BaseColor", Color.white);
+                var nor = AssetDatabase.LoadAssetAtPath<Texture2D>(dir + id + "_nor_gl.jpg");
+                if (nor != null)
+                {
+                    mat.SetTexture("_BumpMap", nor);
+                    mat.EnableKeyword("_NORMALMAP");
+                }
+                mat.SetFloat("_Smoothness", 0.25f);
+                EditorUtility.SetDirty(mat);
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                {
+                    var mats = r.sharedMaterials;
+                    for (int i = 0; i < mats.Length; i++) mats[i] = SpecialSlot(mats[i]) ?? mat;
+                    r.sharedMaterials = mats;
+                }
+            }
+            else
+            {
+                // Multi-material scans ship one texture set per part: {id}_{part}_diff.png / _nor_gl / _rough.
+                var cache = new System.Collections.Generic.Dictionary<string, Material>();
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                {
+                    var mats = r.sharedMaterials;
+                    for (int i = 0; i < mats.Length; i++)
+                    {
+                        if (mats[i] == null) continue;
+                        var special = SpecialSlot(mats[i]);
+                        if (special != null) { mats[i] = special; continue; }
+                        string part = PartTexturePrefix(dir, id, mats[i].name);
+                        if (part == null) continue;
+                        if (!cache.TryGetValue(part, out var pm)) cache[part] = pm = PartMaterial(dir, part);
+                        mats[i] = pm;
+                    }
+                    r.sharedMaterials = mats;
+                }
+            }
+
+            // Optional fit to a height, then sit it on the ground point.
+            Bounds b = WorldBounds(go);
+            if (targetHeight > 0f && b.size.y > 0.0001f) { go.transform.localScale *= targetHeight / b.size.y; b = WorldBounds(go); }
+            Vector3 groundWorld = parent.TransformPoint(localPos);
+            go.transform.position += new Vector3(groundWorld.x - b.center.x, groundWorld.y - b.min.y, groundWorld.z - b.center.z);
+            foreach (var t in go.GetComponentsInChildren<Transform>(true))
+                GameObjectUtility.SetStaticEditorFlags(t.gameObject, StaticEditorFlags.BatchingStatic);
+            return go;
+        }
+
+        /// <summary>Glass panes and light bulbs inside scans get real glass / a warm emissive instead of the body texture.</summary>
+        static Material SpecialSlot(Material m)
+        {
+            if (m == null) return null;
+            string n = m.name.ToLowerInvariant();
+            if (n.EndsWith("_glass") || n.Contains("glass")) return Transparent("ScanGlass", new Color(0.8f, 0.85f, 0.88f, 0.25f));
+            if (n.Contains("bulb")) return Glow("ScanBulb", new Color(1f, 0.82f, 0.55f), 2.5f);
+            return null;
+        }
+
+        /// <summary>
+        /// Poly Haven files often hold several variants side by side: "_LOD0".."_LOD4" meshes (made into a LODGroup),
+        /// "_aged" / "_rusted" twins and "_a".."_d" alternatives (one is kept, chosen by variant).
+        /// </summary>
+        static void KeepOneVariant(GameObject go, int variant)
+        {
+            var rs = new List<Renderer>(go.GetComponentsInChildren<Renderer>(true));
+            // LOD chains
+            var lods = new SortedDictionary<int, List<Renderer>>();
+            foreach (var r in rs)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(r.name, @"_LOD(\d)$");
+                if (m.Success) { int k = int.Parse(m.Groups[1].Value); if (!lods.ContainsKey(k)) lods[k] = new List<Renderer>(); lods[k].Add(r); }
+            }
+            if (lods.Count > 1)
+            {
+                if (go.GetComponent<LODGroup>() != null) return; // Unity's importer already built it from the _LODn names
+                float[] heights = { 0.5f, 0.25f, 0.12f, 0.05f, 0.02f, 0.01f };
+                var list = new List<LOD>();
+                int idx = 0;
+                foreach (var kv in lods) list.Add(new LOD(heights[Mathf.Min(idx++, heights.Length - 1)], kv.Value.ToArray()));
+                go.AddComponent<LODGroup>().SetLODs(list.ToArray());
+                return;
+            }
+            void Unpack()
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(go))
+                    PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
+            }
+            // Weathered twins: keep the clean one (odd variants keep the weathered one).
+            bool Worn(Renderer r) => r.name.Contains("_aged") || r.name.Contains("_rusted");
+            int worn = rs.FindAll(r => Worn(r)).Count;
+            if (worn > 0 && worn < rs.Count)
+            {
+                bool keepWorn = (variant & 1) == 1;
+                Unpack();
+                foreach (var r in rs) if (Worn(r) != keepWorn) Object.DestroyImmediate(r.gameObject);
+                return;
+            }
+            // Lettered alternatives
+            var letters = new SortedSet<string>();
+            foreach (var r in rs)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(r.name, @"_([a-z])$");
+                if (m.Success) letters.Add(m.Groups[1].Value);
+            }
+            if (letters.Count > 1)
+            {
+                var arr = new List<string>(letters);
+                string keep = arr[Mathf.Abs(variant) % arr.Count];
+                Unpack();
+                foreach (var r in rs)
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(r.name, @"_([a-z])$");
+                    if (m.Success && m.Groups[1].Value != keep) Object.DestroyImmediate(r.gameObject);
+                }
+            }
+        }
+
+        /// <summary>Finds the "{id}_{part}" texture prefix whose part name appears in the scan's material name.</summary>
+        static string PartTexturePrefix(string dir, string id, string matName)
+        {
+            string lower = matName.ToLowerInvariant();
+            foreach (var guid in AssetDatabase.FindAssets("_diff t:Texture2D", new[] { dir.TrimEnd('/') }))
+            {
+                string file = System.IO.Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+                if (!file.EndsWith("_diff")) continue;
+                string prefix = file.Substring(0, file.Length - 5);
+                string part = prefix.Length > id.Length ? prefix.Substring(id.Length).Trim('_') : "";
+                if (part.Length > 0 && lower.Contains(part.ToLowerInvariant())) return prefix;
+            }
+            return null;
+        }
+
+        /// <summary>Adds one box collider around a scanned prop so the player can't walk through it.</summary>
+        public static void SolidBounds(GameObject go)
+        {
+            Bounds b = WorldBounds(go);
+            var col = go.AddComponent<BoxCollider>();
+            col.center = go.transform.InverseTransformPoint(b.center);
+            Vector3 s = go.transform.lossyScale;
+            Vector3 size = Quaternion.Inverse(go.transform.rotation) * b.size;
+            col.size = new Vector3(Mathf.Abs(size.x / s.x), Mathf.Abs(size.y / s.y), Mathf.Abs(size.z / s.z));
+        }
+
+        static Material PartMaterial(string dir, string prefix)
+        {
+            string matPath = "Assets/AcrophobiaVR/Generated/Materials/PH_" + prefix + ".mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(mat, matPath);
+            }
+            Texture2D Tex(string suffix) =>
+                AssetDatabase.LoadAssetAtPath<Texture2D>(dir + prefix + suffix + ".png") ?? AssetDatabase.LoadAssetAtPath<Texture2D>(dir + prefix + suffix + ".jpg");
+            string alphaFile = System.IO.File.Exists(dir + prefix + "_alpha.png") ? dir + prefix + "_alpha.png"
+                : System.IO.File.Exists(dir + prefix + "_opacity.png") ? dir + prefix + "_opacity.png" : null;
+            var baseMap = alphaFile != null ? CutoutTexture(dir + prefix + "_diff.png", alphaFile, prefix) : Tex("_diff");
+            mat.SetTexture("_BaseMap", baseMap);
+            mat.SetColor("_BaseColor", Color.white);
+            var nor = Tex("_nor_gl");
+            if (nor != null) { mat.SetTexture("_BumpMap", nor); mat.EnableKeyword("_NORMALMAP"); }
+            mat.SetFloat("_Metallic", 0f);
+            mat.SetFloat("_Smoothness", 0.3f);
+            if (alphaFile != null)
+            {
+                // Leaves / grilles: alpha cutout, both sides visible.
+                mat.SetFloat("_AlphaClip", 1f);
+                mat.SetFloat("_Cutoff", 0.5f);
+                mat.SetFloat("_Cull", 0f);
+                mat.EnableKeyword("_ALPHATEST_ON");
+                mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+            }
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>Poly Haven ships opacity as its own map: merge it into the diffuse alpha (written once to Generated/Textures).</summary>
+        static Texture2D CutoutTexture(string diffPath, string alphaPath, string prefix)
+        {
+            string outPath = "Assets/AcrophobiaVR/Generated/Textures/PH_" + prefix + "_cutout.png";
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(outPath);
+            if (existing != null) return existing;
+            var diff = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            var alpha = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (!diff.LoadImage(System.IO.File.ReadAllBytes(diffPath)) || !alpha.LoadImage(System.IO.File.ReadAllBytes(alphaPath)))
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(diffPath);
+            var px = diff.GetPixels32();
+            int w = diff.width, h = diff.height;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    Color a = alpha.GetPixelBilinear((x + 0.5f) / w, (y + 0.5f) / h);
+                    px[y * w + x].a = (byte)Mathf.Clamp(Mathf.RoundToInt(a.r * 255f), 0, 255);
+                }
+            var outTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            outTex.SetPixels32(px);
+            System.IO.File.WriteAllBytes(outPath, outTex.EncodeToPNG());
+            Object.DestroyImmediate(diff); Object.DestroyImmediate(alpha); Object.DestroyImmediate(outTex);
+            AssetDatabase.ImportAsset(outPath, ImportAssetOptions.ForceSynchronousImport);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(outPath);
+            imp.alphaSource = TextureImporterAlphaSource.FromInput;
+            imp.alphaIsTransparency = true; // dilate colour into the holes so mip edges don't go dark
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(outPath);
         }
 
         /// <summary>Extra rotation applied to every imported model (Blender -Y-forward exports face Unity +Z after this).</summary>
@@ -478,6 +714,25 @@ namespace AcrophobiaVR.EditorTools
             var root = new GameObject("Pip (Companion)");
             root.transform.position = pos;
             var comp = root.AddComponent<Companion>();
+            // Realistic camera drone (Gemini Argon: Body + Rotor1..4) when present.
+            var drone = Model("Drone/Drone", root.transform, new Vector3(0f, -0.04f, 0f), 0f);
+            if (drone != null)
+            {
+                comp.body = drone.transform;
+                comp.drone = true;
+                root.AddComponent<SoundEmitter>().kind = EmitterKind.Drone;
+                int k = 0;
+                foreach (var part in drone.GetComponentsInChildren<Transform>(true))
+                {
+                    if (!part.name.StartsWith("Rotor")) continue;
+                    // Spin about whichever local axis points up after import; neighbours counter-rotate like a real quad.
+                    Vector3 local = part.InverseTransformDirection(Vector3.up);
+                    Vector3 axis = Mathf.Abs(local.x) > Mathf.Abs(local.y) && Mathf.Abs(local.x) > Mathf.Abs(local.z) ? Vector3.right
+                        : (Mathf.Abs(local.y) > Mathf.Abs(local.z) ? Vector3.up : Vector3.forward);
+                    part.gameObject.AddComponent<Spinner>().degreesPerSecond = axis * ((k++ % 2 == 0) ? 2400f : -2400f);
+                }
+                return comp;
+            }
             // Gemini Argon model with separate WingL / WingR; the primitive Pip below is the fallback.
             var pipModel = Model("Pip", root.transform, new Vector3(0f, -0.09f, 0f), 0.18f);
             if (pipModel != null)
@@ -559,7 +814,7 @@ namespace AcrophobiaVR.EditorTools
         }
 
         /// <summary>Random city blocks of boxes, avoiding a rectangle where the level is.</summary>
-        public static void City(Transform parent, Vector2 center, int halfCount, float spacing, Vector2 heightRange, Rect avoid, int seed, Material[] palette, Material windowMat, float groundY = 0f)
+        public static void City(Transform parent, Vector2 center, int halfCount, float spacing, Vector2 heightRange, Rect avoid, int seed, Material[] palette, Material windowMat, float groundY = 0f, float modelRadius = 130f)
         {
             // Facade textures (with lit windows in their emission maps) replace the old glowing window bands.
             var rng = new System.Random(seed);
@@ -577,6 +832,18 @@ namespace AcrophobiaVR.EditorTools
                 float t = (float)rng.NextDouble();
                 float h = Mathf.Lerp(heightRange.x, heightRange.y, t * t);
                 var mat = palette[rng.Next(palette.Length)];
+                // Realistic Gemini Argon buildings near the play area (picked by height); cheap boxes in the far distance.
+                if (Vector2.Distance(new Vector2(x, z), center) < modelRadius)
+                {
+                    string file = h < 17f ? "Bldg/BldgStucco" : (h < 32f ? "Bldg/BldgBrick" : (h < 75f ? "Bldg/BldgOffice" : "Bldg/BldgTower"));
+                    var bm = Model(file, city, new Vector3(x, groundY, z), h, 90f * rng.Next(4));
+                    if (bm != null)
+                    {
+                        foreach (var bt in bm.GetComponentsInChildren<Transform>(true))
+                            GameObjectUtility.SetStaticEditorFlags(bt.gameObject, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
+                        continue;
+                    }
+                }
                 Box("Building", city, new Vector3(x, groundY + h * 0.5f, z), new Vector3(w, h, d), mat, false);
                 // Tall towers get a setback crown, like real skyscrapers.
                 if (h > 60f && rng.NextDouble() < 0.6)
@@ -609,12 +876,96 @@ namespace AcrophobiaVR.EditorTools
         public static Transform LookTarget(string name, Transform parent, Vector3 pos, float ringRadius)
         {
             var t = Point(name, parent, pos);
-            var ring = Cyl("Marker", t, new Vector3(0, 2.6f, 0), ringRadius, 0.06f, Glow("MarkerGlow", new Color(1f, 0.85f, 0.3f), 3f), false, false);
+            // Objective waypoint: a thin gold ring and a downward-pointing gold cone (soft glow so it stays gold, not white).
+            var gold = Glow("WaypointGold", new Color(1f, 0.72f, 0.18f), 1.1f);
+            var ring = Cyl("Marker", t, new Vector3(0, 2.6f, 0), ringRadius, 0.02f, gold, false, false);
             ring.AddComponent<Bobber>().amplitude = 0.25f;
-            var arrow = Prim(PrimitiveType.Cube, "Arrow", t, new Vector3(0, 3.4f, 0), new Vector3(0.3f, 0.3f, 0.3f), Glow("MarkerGlow", new Color(1f, 0.85f, 0.3f), 3f), false, false, new Vector3(45, 0, 45));
+            var arrow = new GameObject("Arrow");
+            arrow.transform.SetParent(t, false);
+            arrow.transform.localPosition = new Vector3(0, 3.3f, 0);
+            arrow.AddComponent<MeshFilter>().sharedMesh = WaypointCone();
+            arrow.AddComponent<MeshRenderer>().sharedMaterial = gold;
             arrow.AddComponent<Spinner>().degreesPerSecond = new Vector3(0, 90, 0);
             arrow.AddComponent<Bobber>().amplitude = 0.25f;
             return t;
+        }
+
+        /// <summary>
+        /// Open steel lattice between two points (a tower-crane mast or jib): corner chords plus zig-zag braces on each
+        /// face. Visual only (no colliders); keep the solid box as an invisible collider for anything walkable.
+        /// </summary>
+        public static GameObject Lattice(string name, Transform parent, Vector3 from, Vector3 to, float width, float height, Material mat, float bay = 1.6f)
+        {
+            var g = Group(name, parent).transform;
+            Vector3 axis = to - from;
+            float len = axis.magnitude;
+            Vector3 f = axis / len;
+            Vector3 side = Vector3.Cross(Mathf.Abs(f.y) > 0.9f ? Vector3.forward : Vector3.up, f).normalized;
+            Vector3 up = Vector3.Cross(f, side).normalized;
+            // Four corners of the cross-section (square mast) - a jib uses the same with its own width / height.
+            Vector3[] c = { (-side * width - up * height) * 0.5f, (side * width - up * height) * 0.5f, (side * width + up * height) * 0.5f, (-side * width + up * height) * 0.5f };
+            float chord = Mathf.Max(0.06f, Mathf.Min(width, height) * 0.09f), brace = chord * 0.55f;
+            for (int i = 0; i < 4; i++) Bar("Chord", g, from + c[i], to + c[i], chord, mat, false, true);
+            int bays = Mathf.Max(1, Mathf.RoundToInt(len / bay));
+            for (int k = 0; k < bays; k++)
+            {
+                Vector3 a = from + f * (len * k / bays), b = from + f * (len * (k + 1) / bays);
+                for (int i = 0; i < 4; i++)
+                {
+                    int j = (i + 1) % 4;
+                    Bar("Strut", g, a + c[i], a + c[j], brace, mat, false, true);
+                    // zig-zag diagonals, alternating direction per bay
+                    if ((k & 1) == 0) Bar("Brace", g, a + c[i], b + c[j], brace, mat, false, true);
+                    else Bar("Brace", g, a + c[j], b + c[i], brace, mat, false, true);
+                }
+            }
+            return g.gameObject;
+        }
+
+        /// <summary>A painted sign board (facing -Z) with real lettering instead of a blank glowing slab.</summary>
+        public static GameObject SignBoard(string name, Transform parent, Vector3 center, Vector2 size, string text, Material board, Color textColor, float fontSize)
+        {
+            var b = Box(name, parent, center, new Vector3(size.x, size.y, 0.05f), board, false);
+            var t = new GameObject(name + "Text").AddComponent<TMPro.TextMeshPro>();
+            t.transform.SetParent(parent, false);
+            t.transform.localPosition = center + new Vector3(0f, 0f, -0.035f);
+            t.rectTransform.sizeDelta = new Vector2(size.x * 0.92f, size.y * 0.9f);
+            t.text = text;
+            t.fontSize = fontSize;
+            t.fontStyle = TMPro.FontStyles.Bold;
+            t.alignment = TMPro.TextAlignmentOptions.Center;
+            t.enableWordWrapping = false;
+            t.color = textColor;
+            return b;
+        }
+
+        static Mesh s_WaypointCone;
+
+        /// <summary>A 6-sided cone, 0.5 m tall, apex pointing down at the origin (shared by every waypoint).</summary>
+        static Mesh WaypointCone()
+        {
+            if (s_WaypointCone != null) return s_WaypointCone;
+            const int sides = 6;
+            const float r = 0.18f, h = 0.5f;
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            for (int i = 0; i < sides; i++)
+            {
+                float a0 = i * Mathf.PI * 2f / sides, a1 = (i + 1) * Mathf.PI * 2f / sides;
+                Vector3 p0 = new Vector3(Mathf.Cos(a0) * r, h, Mathf.Sin(a0) * r), p1 = new Vector3(Mathf.Cos(a1) * r, h, Mathf.Sin(a1) * r);
+                int b = verts.Count;
+                verts.Add(Vector3.zero); verts.Add(p0); verts.Add(p1);          // side (flat shaded, clockwise from outside)
+                tris.Add(b); tris.Add(b + 1); tris.Add(b + 2);
+                b = verts.Count;
+                verts.Add(new Vector3(0f, h, 0f)); verts.Add(p1); verts.Add(p0); // top cap (clockwise from above)
+                tris.Add(b); tris.Add(b + 1); tris.Add(b + 2);
+            }
+            var m = new Mesh { name = "WaypointCone" };
+            m.SetVertices(verts);
+            m.SetTriangles(tris, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return s_WaypointCone = m;
         }
 
         public static CourageStar Star(Transform parent, Vector3 pos)

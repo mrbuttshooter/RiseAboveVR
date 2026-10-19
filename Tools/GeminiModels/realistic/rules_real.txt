@@ -1,0 +1,25 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+
+GOAL: a PHOTOREALISTIC, real-world-accurate model for a VR game (NOT cartoon, NOT stylized): true anatomy and proportions of the real species/object, realistic eye size, natural colours with subtle variation.
+
+GEOMETRY
+- Delete everything in the default scene first. Z is up, the model faces -Y, origin at the bottom centre (lowest point at Z=0) unless the brief says otherwise.
+- Every part connected (embed joints 1-2 cm), no floating pieces. Build from bmesh/primitives, shape carefully (proportional vertex edits, lofts), Subdivision Surface level 2, then a SUBTLE Displace modifier driven by a procedural texture (bpy.data.textures.new type 'CLOUDS' or 'VORONOI', strength 0.002-0.006 m) to break up perfect smoothness. Apply ALL modifiers. Smooth shading.
+- JOIN everything into ONE object named as in the brief (except separate parts the brief explicitly asks for).
+- Final triangle count 8000-20000 (Meta Quest).
+
+MATERIAL AND TEXTURE BAKING (this is what makes it realistic)
+1. Before joining, give each part a Principled BSDF material built from procedural nodes (Noise / Voronoi / Wave textures + ColorRamp + Mix + Bump) that imitates the real surface: feather barbs and layered feather edges, fur strands and tabby/coat patterns, skin pores, fabric weave, painted metal with panel lines and wear. Realistic roughness (0.35-0.8). Eyes: dark glossy with roughness 0.05.
+2. After joining: UV unwrap the whole object with bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.02) in edit mode.
+3. Create two images 1024x1024: "<Name>_albedo" and "<Name>_normal" (normal image with color space Non-Color). Add an Image Texture node with each image to EVERY material and make it the active node before each bake.
+4. Use Cycles on CPU (scene.cycles.device='CPU', samples 16). Bake type DIFFUSE with pass_filter={'COLOR'} into the albedo image; then bake type NORMAL (normal_space TANGENT) into the normal image. Use bpy.ops.object.bake with margin=8.
+5. Save both images as PNG next to the output FBX: <outdir>/<Name>_albedo.png and <outdir>/<Name>_normal.png (image.filepath_raw = path; image.file_format='PNG'; image.save()).
+6. Replace ALL material slots with ONE new material "<Name>_Mat": Principled BSDF whose Base Color = albedo image texture, Normal = Normal Map node (strength 1) fed by the normal image (Non-Color), roughness 0.55 (eyes cannot differ any more - that is fine).
+
+EXPORT AND PREVIEW
+- Read the output path from sys.argv after "--" (e.g. C:/x/name.fbx); create its folder if needed.
+- Export FBX: selected objects only, apply transforms, axis_forward='-Z', axis_up='Y', mesh smooth type FACE, path_mode='COPY', embed_textures=True.
+- Render a 900x900 preview PNG to the same path with ".png": EEVEE (pick the engine from scene.render.bl_rna.properties['engine'].enum_items keys), neutral grey world strength 0.5, a sun strength 3 plus a soft area fill, camera at a 3/4 front view (front-left, slightly above) framing the whole model with ~10% margin.
+- Print the final triangle count with print("TRIS", n).
+- Write valid Python 3.11: never a positional argument after a keyword argument; clamp values before fractional powers; avoid division by zero; do not invent bpy operators or arguments.

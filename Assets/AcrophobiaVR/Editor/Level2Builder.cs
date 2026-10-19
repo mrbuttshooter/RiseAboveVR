@@ -28,18 +28,31 @@ namespace AcrophobiaVR.EditorTools
             var hazard = Glow("HazardStripe", new Color(1f, 0.6f, 0.1f), 0.6f);
             Material[] palette =
             {
-                Mat("Bldg1", new Color(0.82f, 0.7f, 0.6f)), Mat("Bldg2", new Color(0.7f, 0.62f, 0.58f)),
-                Mat("Bldg3", new Color(0.88f, 0.82f, 0.72f)), Mat("Glass Tower", new Color(0.45f, 0.6f, 0.75f), 0.85f, 0.4f),
+                Mat("Bldg1", new Color(0.70f, 0.46f, 0.38f)), Mat("Bldg2", new Color(0.86f, 0.82f, 0.74f)),
+                Mat("Bldg3", new Color(0.74f, 0.75f, 0.77f)), Mat("Glass Tower", new Color(0.45f, 0.6f, 0.75f), 0.85f, 0.4f),
             };
 
             Ground(env, 300f, dirt);
             City(env, new Vector2(10, 10), 7, 30f, new Vector2(10, 70), new Rect(-40, -40, 110, 110), 202, palette, Glow("WindowCool", new Color(0.7f, 0.85f, 1f), 0.8f));
             for (int i = 0; i < 14; i++)
                 Box("Fence", env, new Vector3(-25 + i * 5f, 1f, -10f), new Vector3(4.8f, 2f, 0.08f), Mat("FenceMesh", new Color(0.3f, 0.5f, 0.35f)));
-            for (int i = 0; i < 6; i++)
-                Cyl("Cone", env, new Vector3(-12 + i * 1.5f, 0, -6), 0.15f, 0.5f, hazard, false);
-            Box("Container", env, new Vector3(-20, 1.3f, 4), new Vector3(2.5f, 2.6f, 6f), Mat("ContainerBlue", new Color(0.2f, 0.4f, 0.65f)));
-            Box("SiteOffice", env, new Vector3(-20, 1.3f, 12), new Vector3(2.5f, 2.6f, 6f), Mat("ContainerWhite", new Color(0.9f, 0.9f, 0.88f)));
+            // Photo-scanned concrete road barriers by the gate (cones as a fallback).
+            if (PolyProp("concrete_road_barrier_02", env, new Vector3(-10.5f, 0f, -6f), 0f) != null)
+            {
+                PolyProp("concrete_road_barrier_02", env, new Vector3(-8.85f, 0f, -6f), 0f);
+                PolyProp("concrete_road_barrier_02", env, new Vector3(-4.2f, 0f, -6f), 0f);
+            }
+            else
+                for (int i = 0; i < 6; i++)
+                    Cyl("Cone", env, new Vector3(-12 + i * 1.5f, 0, -6), 0.15f, 0.5f, hazard, false);
+            // Realistic 20 ft shipping container (Gemini Argon, 6 m along its X); box fallback.
+            var container = Model("Props/Container20", env, new Vector3(-20f, 0f, 4f), 0f, 90f);
+            if (container != null) SolidBounds(container);
+            else Box("Container", env, new Vector3(-20, 1.3f, 4), new Vector3(2.5f, 2.6f, 6f), Mat("ContainerBlue", new Color(0.2f, 0.4f, 0.65f)));
+            // Realistic portable site office (Gemini Argon, 6 m along its X, door + steps on the front); box fallback.
+            var cabin = Model("Props/SiteCabin", env, new Vector3(-20f, 0f, 12f), 0f, 90f);
+            if (cabin != null) SolidBounds(cabin);
+            else Box("SiteOffice", env, new Vector3(-20, 1.3f, 12), new Vector3(2.5f, 2.6f, 6f), Mat("ContainerWhite", new Color(0.9f, 0.9f, 0.88f)));
 
             // Building A: steel frame, slab at 12 m and roof slab at 25 m
             var bldg = Group("BuildingA", env).transform;
@@ -101,7 +114,7 @@ namespace AcrophobiaVR.EditorTools
             mp.stallSeconds = 6f;
             mp.startLine = "Going up! No rails on this lift - stay in the middle and watch the ground shrink.";
             mp.rideZone = Zone<HeadZoneRide>("RideZone", lift.transform, new Vector3(0, 1.2f, 0), new Vector3(2.3f, 2.6f, 2.3f));
-            Box("CallSign", env, new Vector3(-7.75f, 2.4f, 1.6f), new Vector3(1.6f, 0.4f, 0.05f), Glow("ExitGreen", new Color(0.3f, 1f, 0.5f), 2f), false);
+            SignBoard("CallSign", env, new Vector3(-7.75f, 2.4f, 1.6f), new Vector2(1.6f, 0.4f), "SITE HOIST", Mat("SignYellow", new Color(0.95f, 0.75f, 0.1f), 0.35f), new Color(0.05f, 0.05f, 0.05f), 2.2f);
             var liftArrive = Zone<CheckpointZone>("CP Roof", game, new Vector3(-4.5f, 26.2f, 4f), new Vector3(3f, 2.4f, 3f));
             liftArrive.label = "Roof (25 m)";
             liftArrive.respawnPoint = Point("CP Roof Spawn", game, new Vector3(-4.5f, 25f, 4f), 90f);
@@ -126,8 +139,11 @@ namespace AcrophobiaVR.EditorTools
 
             var bag = Group("CementBag", game);
             bag.transform.position = new Vector3(-3.5f, 25.13f, 9.5f);
-            Box("Sack", bag.transform, Vector3.zero, new Vector3(0.5f, 0.24f, 0.34f), Mat("CementSack", new Color(0.72f, 0.68f, 0.6f)), false, false);
-            Box("Label", bag.transform, new Vector3(0, 0.121f, 0), new Vector3(0.3f, 0.005f, 0.2f), Mat("SackLabel", new Color(0.8f, 0.2f, 0.15f)), false, false);
+            if (PolyProp("cement_bag", bag.transform, new Vector3(0f, -0.12f, 0f), 0f, 1f, 0.24f) == null)
+            {
+                Box("Sack", bag.transform, Vector3.zero, new Vector3(0.5f, 0.24f, 0.34f), Mat("CementSack", new Color(0.72f, 0.68f, 0.6f)), false, false);
+                Box("Label", bag.transform, new Vector3(0, 0.121f, 0), new Vector3(0.3f, 0.005f, 0.2f), Mat("SackLabel", new Color(0.8f, 0.2f, 0.15f)), false, false);
+            }
             var bagCol = bag.AddComponent<BoxCollider>();
             bagCol.size = new Vector3(0.5f, 0.24f, 0.34f);
             MakeGrabbable(bag, true);
@@ -207,7 +223,7 @@ namespace AcrophobiaVR.EditorTools
             var tools = Group("CollectTools", game).AddComponent<CollectObjective>();
             tools.description = "Find the 3 lost tools";
             tools.companionLineOnComplete = "All the tools! The foreman owes you a coffee.";
-            tools.items.Add(Tool(game, "Wrench", new Vector3(5.2f, 25.25f, 11.3f), Mat("ToolSteel", new Color(0.7f, 0.72f, 0.75f), 0.8f, 0.9f), new Vector3(0.35f, 0.05f, 0.08f)));
+            tools.items.Add(Tool(game, "Wrench", new Vector3(5.2f, 25.25f, 11.3f), Mat("ToolSteel", new Color(0.7f, 0.72f, 0.75f), 0.8f, 0.9f), new Vector3(0.35f, 0.05f, 0.08f), "adjustable_wrench"));
             var hammer = Tool(game, "Hammer", new Vector3(0f, 25.25f, 14.8f), Mat("ToolRed", new Color(0.8f, 0.15f, 0.12f)), new Vector3(0.1f, 0.06f, 0.35f));
             hammer.transform.SetParent(tipPivot, true); // it rides the board if the board tips
             tools.items.Add(hammer);
@@ -240,8 +256,14 @@ namespace AcrophobiaVR.EditorTools
 
             // Crane: mast, jib and the hanging beam that carries you to the next roof
             var crane = Group("Crane", env).transform;
-            Box("Mast", crane, new Vector3(36f, 21f, 6f), new Vector3(1.6f, 42f, 1.6f), yellow);
-            Box("Jib", crane, new Vector3(24f, 42f, 6f), new Vector3(36f, 1.2f, 1.2f), yellow);
+            // Open lattice like a real tower crane; the solid boxes stay as invisible colliders (the jib is walked on).
+            var mastBox = Box("Mast", crane, new Vector3(36f, 21f, 6f), new Vector3(1.6f, 42f, 1.6f), yellow);
+            var jibBox = Box("Jib", crane, new Vector3(24f, 42f, 6f), new Vector3(36f, 1.2f, 1.2f), yellow);
+            mastBox.GetComponent<MeshRenderer>().enabled = false;
+            jibBox.GetComponent<MeshRenderer>().enabled = false;
+            Lattice("MastLattice", crane, new Vector3(36f, 0f, 6f), new Vector3(36f, 42f, 6f), 1.6f, 1.6f, yellow, 1.6f);
+            Lattice("JibLattice", crane, new Vector3(42f, 42f, 6f), new Vector3(6f, 42f, 6f), 1.2f, 1.2f, yellow, 1.5f);
+            Floor("JibWalkway", crane, 6f, 42f, 5.75f, 6.25f, 42.62f, 0.04f, Mat("Grate", new Color(0.45f, 0.45f, 0.45f)), false);
             Box("Cab", crane, new Vector3(36f, 40f, 4.5f), new Vector3(2f, 2f, 2f), Mat("CabGlass", new Color(0.3f, 0.4f, 0.5f), 0.9f));
             Box("CounterWeight", crane, new Vector3(44f, 41f, 6f), new Vector3(4f, 3f, 2f), concrete);
 
@@ -272,7 +294,7 @@ namespace AcrophobiaVR.EditorTools
 
             // Roof C - the goal
             var roofC = Group("BuildingC", env).transform;
-            Box("Building", roofC, new Vector3(23f, 13.85f, 28f), new Vector3(14f, 27.7f, 12f), Mat("Bldg3", new Color(0.88f, 0.82f, 0.72f)));
+            Box("Building", roofC, new Vector3(23f, 13.85f, 28f), new Vector3(14f, 27.7f, 12f), Mat("Bldg3", new Color(0.74f, 0.75f, 0.77f)));
             Floor("RoofC", roofC, 16f, 30f, 22f, 34f, 28f, 0.3f, concrete, true);
             Railing("RoofCRail", roofC, new Vector3(16, 28, 34), new Vector3(30, 28, 34), 1.1f, scaffold);
             Cyl("Helipad", roofC, new Vector3(22f, 28.01f, 30.5f), 2.5f, 0.02f, Glow("HelipadGlow", new Color(0.3f, 1f, 0.5f), 0.8f), false);
@@ -285,6 +307,25 @@ namespace AcrophobiaVR.EditorTools
             Star(game, new Vector3(0f, 26.2f, 15.45f));
             Star(game, new Vector3(25f, 32.0f, 7.15f));
             Star(game, new Vector3(-6.0f, 26.0f, 12.6f));
+
+            // Photo-scanned site dressing (CC0 Poly Haven).
+            var siteDress = Group("ScanDressing", env).transform;
+            PolyProp("wooden_crate_01", siteDress, new Vector3(-14f, 0f, 6f), 15f);
+            PolyProp("wooden_crate_01", siteDress, new Vector3(-14.9f, 0f, 7.2f), 70f);
+            PolyProp("barrel_03", siteDress, new Vector3(-12.5f, 0f, 9f));
+            PolyProp("barrel_03", siteDress, new Vector3(-11.8f, 0f, 9.6f), 40f);
+            PolyProp("propane_tank", siteDress, new Vector3(-16f, 0f, 10.5f));
+            PolyProp("wooden_crate_01", siteDress, new Vector3(-3.5f, 25f, 1.2f), 30f);
+            PolyProp("barrel_03", siteDress, new Vector3(3.8f, 25f, 2f));
+            PolyProp("propane_tank", siteDress, new Vector3(4.6f, 25f, 2.4f), 10f);
+            PolyProp("hand_truck", siteDress, new Vector3(-10.6f, 0f, 7.6f), 200f);
+            PolyProp("portable_welding_cart", siteDress, new Vector3(-17.2f, 0f, 8.4f), 80f);
+            PolyProp("plastic_crate_01", siteDress, new Vector3(-13.2f, 0f, 11f), 10f);
+            PolyProp("plastic_crate_01", siteDress, new Vector3(-13.1f, 0.27f, 11.05f), 25f);
+            PolyProp("cardboard_box_01", siteDress, new Vector3(-12.4f, 0f, 11.8f), 60f);
+            PolyProp("cardboard_box_01", siteDress, new Vector3(2.6f, 25f, 9.4f), 15f);
+            PolyProp("wooden_ladder", siteDress, new Vector3(-18.6f, 0f, 14.6f), 90f);
+            PolyProp("covered_car", siteDress, new Vector3(-30f, 0f, 2f), 5f);
 
             var lc = CommonLevel(1, "Level 2 - The Construction Site", new Vector3(-7.75f, 0f, -5f), 0f, 0f, 45f, 0.5f);
             lc.objectives = new Objective[] { rideUp, weigh, tools, climb, deliver };
@@ -299,9 +340,15 @@ namespace AcrophobiaVR.EditorTools
             Save(scene, GameManager.LevelScenes[1]);
         }
 
-        static Collectible Tool(Transform parent, string name, Vector3 pos, Material mat, Vector3 size)
+        static Collectible Tool(Transform parent, string name, Vector3 pos, Material mat, Vector3 size, string scan = null)
         {
-            var go = Box(name, parent, pos, size, mat, true, false);
+            // Unscaled root holds the collider; the visual is a child (a photo-scanned prop when available).
+            var go = Group(name, parent);
+            go.transform.position = pos;
+            var col = go.AddComponent<BoxCollider>();
+            col.size = size;
+            if (scan == null || PolyProp(scan, go.transform, new Vector3(0f, -size.y * 0.5f, 0f), 90f, 1f, 0f) == null)
+                Box("Visual", go.transform, Vector3.zero, size, mat, false, false);
             MakeGrabbable(go, true);
             var c = go.AddComponent<Collectible>();
             c.displayName = name;

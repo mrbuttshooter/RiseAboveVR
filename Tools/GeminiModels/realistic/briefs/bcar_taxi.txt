@@ -1,0 +1,1 @@
+SUBJECT (object "CarTaxi"): a New York yellow taxi, Toyota Camry-style mid-size sedan, 4.88 m long, 1.84 m wide, 1.45 m tall, wheelbase 2.82 m. Taxi-yellow non-metallic paint, black lower trim, a roof sign box "TAXI" (white with dark letters), checker stripe hint along the doors, 17-inch silver alloys, chrome window trim.

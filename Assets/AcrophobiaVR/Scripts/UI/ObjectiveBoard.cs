@@ -44,6 +44,8 @@ namespace AcrophobiaVR
 
         void Refresh()
         {
+            // After an editor hot reload the UI lists come back empty while the objectives survive: skip, don't spam.
+            if (objectives == null || lines.Count < objectives.Length || icons.Count < objectives.Length || stats == null) return;
             for (int i = 0; i < objectives.Length; i++)
             {
                 var o = objectives[i];

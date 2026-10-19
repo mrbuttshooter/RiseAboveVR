@@ -1,0 +1,1 @@
+SUBJECT (object "BldgTower"): a 35-storey glass-and-steel skyscraper, footprint 20 m x 20 m, 120 m tall, dark reflective glass with vertical steel fins, a setback at 2/3 height, a crown with an antenna and red aircraft-warning light housing, ground-floor lobby. Detail is mainly in the baked textures (floor lines, mullions, interior variation).

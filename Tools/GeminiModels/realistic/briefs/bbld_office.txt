@@ -1,0 +1,1 @@
+SUBJECT (object "BldgOffice"): a modern 12-storey office building, footprint 16 m x 16 m, 42 m tall, curtain-wall facade of blue-grey glass with dark aluminium mullions on a grid, concrete spandrel bands every floor, a recessed glass lobby at the ground floor, roof with a lift/stair housing, AC units and a low parapet.

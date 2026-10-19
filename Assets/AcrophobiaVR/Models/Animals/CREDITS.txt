@@ -1,0 +1,7 @@
+Third-party 3D models used in Rise Above (downloaded from the Objaverse dataset, originally published on Sketchfab).
+Each is used under its Creative Commons licence; converted to FBX and resized, otherwise unmodified.
+
+Mittens.fbx: "Dan Dan Cat" by Draculadude - CC Attribution - https://sketchfab.com/3d-models/6fd942297dc34b6cb12dca4be2710b80
+Biscuit.fbx: "Riley" by 3D Resource - CC Attribution - https://sketchfab.com/3d-models/8aedf051c5714409a1171ceed6543644
+Kiwi.fbx: "Parrot" by fakepad - CC Attribution - https://sketchfab.com/3d-models/92e36afa506e492eabc12b6fd34c45c9
+Pigeon.fbx: "pigeon  - 3dModel - Free" by velvel - CC Attribution - https://sketchfab.com/3d-models/e3ee02557a7d43a59ac030f5292aa2d3

@@ -1,0 +1,18 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+
+GOAL: a PHOTOREALISTIC real-world building for a VR city that is seen from rooftops and balconies (NOT cartoon). It will be instanced many times, so keep geometry efficient and put fine detail into baked textures.
+GEOMETRY
+- Delete everything first. Z up, front facade faces -Y, origin at the bottom centre of the footprint (ground level Z=0).
+- Real architectural depth: recessed windows (0.15-0.25 m) with frames and sills, cornices / floor bands, a roof parapet with coping, rooftop details (AC units, vents, water tank or lift housing as in the brief), a ground-floor entrance. Repeat window bays with array logic in code. Use bmesh insets/extrusions; flat shading is fine for architecture (use auto smooth / sharp edges).
+- ONE object named as in the brief. Triangle count 3000-9000.
+TEXTURES (bake)
+1. Procedural Principled materials for each surface: brick with mortar and colour variation, painted render/stucco with stains, concrete with seams, window glass (dark, slightly reflective, with faint interior/curtain variation), metal frames, roof membrane. Add grime: darker streaks under sills and near the ground (use Noise + gradient in object Z).
+2. UV unwrap with bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.01) (world-space scale so bricks are the same size everywhere: after unwrapping, use bpy.ops.uv.average_islands_scale() then bpy.ops.uv.pack_islands(margin=0.01)).
+3. Images "<Name>_albedo" 2048x2048 and "<Name>_normal" 2048x2048 (Non-Color). Image Texture node with each image active in EVERY material before each bake.
+4. Cycles CPU, 16 samples: bake DIFFUSE (pass_filter {'COLOR'}) into albedo, then NORMAL (tangent) into normal, margin 8. Save PNGs next to the output FBX as <Name>_albedo.png / <Name>_normal.png.
+5. Replace all slots with ONE material "<Name>_Mat" (albedo -> Base Color, normal image Non-Color -> Normal Map node -> Normal, roughness 0.7).
+EXPORT AND PREVIEW
+- Output path from sys.argv after "--"; create the folder. Export FBX: selected only, apply transforms, axis_forward='-Z', axis_up='Y', path_mode='COPY', embed_textures=True.
+- Preview PNG at the same path with ".png", 900x900, EEVEE (engine from scene.render.bl_rna.properties['engine'].enum_items keys), grey sky world strength 0.6, sun strength 3 from front-left-above, camera from street level 3/4 view framing the whole building. print("TRIS", n).
+- Valid Python 3.11 only; do not invent bpy operators or arguments.

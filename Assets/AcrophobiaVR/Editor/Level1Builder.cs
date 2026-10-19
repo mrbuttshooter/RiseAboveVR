@@ -11,7 +11,7 @@ namespace AcrophobiaVR.EditorTools
             var scene = NewScene();
             Atmosphere(Sky("SkySunset", new Color(0.85f, 0.6f, 0.52f), new Color(0.35f, 0.3f, 0.3f), 0.06f, 1.2f, 1.35f),
                 new Color(0.95f, 0.72f, 0.55f), new Color(0.85f, 0.65f, 0.55f));
-            Sun(new Vector3(12, -35, 0), new Color(1f, 0.72f, 0.48f), 1.3f);
+            Sun(new Vector3(12, -35, 0), new Color(1f, 0.77f, 0.56f), 1.3f);
 
             const float B = 6f; // balcony floor height
             var env = Group("Environment").transform;
@@ -31,8 +31,8 @@ namespace AcrophobiaVR.EditorTools
             var skin = Mat("Skin", new Color(0.9f, 0.72f, 0.6f));
             Material[] palette =
             {
-                Mat("Bldg1", new Color(0.82f, 0.7f, 0.6f)), Mat("Bldg2", new Color(0.7f, 0.62f, 0.58f)),
-                Mat("Bldg3", new Color(0.88f, 0.82f, 0.72f)), Mat("Bldg4", new Color(0.6f, 0.55f, 0.6f)),
+                Mat("Bldg1", new Color(0.70f, 0.46f, 0.38f)), Mat("Bldg2", new Color(0.86f, 0.82f, 0.74f)),
+                Mat("Bldg3", new Color(0.74f, 0.75f, 0.77f)), Mat("Bldg4", new Color(0.48f, 0.36f, 0.32f)),
             };
 
             // Street level
@@ -67,7 +67,11 @@ namespace AcrophobiaVR.EditorTools
             const float RoofY = 13f;
             Box("Building", cafe, new Vector3(0, RoofY * 0.5f, 7), new Vector3(20, RoofY, 14), cafeWall);
             var frameMat = Mat("WindowFrame", new Color(0.22f, 0.16f, 0.12f), 0.3f);
-            var cafeGlass = Glow("CafeWindowGlass", new Color(0.5f, 0.38f, 0.26f), 0.35f);
+            // Real window glass: dark and glossy (reflects the sky), with a faint warm glow from the lit interior.
+            var cafeGlass = Mat("CafeGlassReal", new Color(0.05f, 0.055f, 0.06f), 0.96f, 0.1f);
+            cafeGlass.EnableKeyword("_EMISSION");
+            cafeGlass.SetColor("_EmissionColor", new Color(0.30f, 0.19f, 0.09f));
+            cafeGlass.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
             var sillMat = Mat("Stone", new Color(0.75f, 0.75f, 0.78f));
             foreach (float y in new[] { 1.9f, 9.6f })
                 for (int w = -4; w <= 4; w++)
@@ -100,12 +104,25 @@ namespace AcrophobiaVR.EditorTools
             Kerb("KerbR", roof, new Vector3(9.95f, RoofY + 0.05f, 0f), new Vector3(9.95f, RoofY + 0.05f, 14f), parapetMat);
             SafetyGlass("RoofGlassL", roof, new Vector3(-10f, RoofY, 0.1f), new Vector3(-6.9f, RoofY, 0.1f), 1.2f, glass);
             SafetyGlass("RoofGlassR", roof, new Vector3(-5.7f, RoofY, 0.1f), new Vector3(10f, RoofY, 0.1f), 1.2f, glass);
-            Cyl("WaterTank", roof, new Vector3(-6f, RoofY, 10f), 1.1f, 2.4f, Mat("TankWood", new Color(0.55f, 0.35f, 0.2f)));
+            // Classic New York rooftop water tower (Objaverse / Sketchfab, CC-BY); simple tank as a fallback.
+            var tower = Model("Props/WaterTower", roof, new Vector3(-6.5f, RoofY + 0.05f, 11.2f), 7f, 15f);
+            if (tower != null) SolidBounds(tower);
+            else Cyl("WaterTank", roof, new Vector3(-6f, RoofY, 10f), 1.1f, 2.4f, Mat("TankWood", new Color(0.55f, 0.35f, 0.2f)));
             Props.RooftopUnits(roof, new Vector3(1f, RoofY + 0.05f, 10f), new Vector2(8f, 4f), 13);
             for (int s = 0; s < 3; s++)
                 Props.Bench(roof, new Vector3(-2f + s * 3f, RoofY + 0.05f, 6.5f), 180f);
-            Box("Awning", cafe, new Vector3(-1f, 3.2f, -1f), new Vector3(10, 0.1f, 2f), cloth, false); // stops short of the window ledge
-            Box("CafeSign", cafe, new Vector3(0, 4.2f, -0.1f), new Vector3(6, 0.9f, 0.15f), Glow("SignGlow", new Color(1f, 0.55f, 0.3f), 2.5f), false);
+            // Sloped canvas awning (stops short of the window ledge) and a painted sign board with lettering.
+            Prim(PrimitiveType.Cube, "Awning", cafe, new Vector3(-1f, 3.25f, -1f), new Vector3(10, 0.06f, 2.1f), cloth, false, true, new Vector3(-16f, 0f, 0f));
+            Box("CafeSign", cafe, new Vector3(0, 4.2f, -0.1f), new Vector3(6, 0.9f, 0.12f), Mat("SignBoard", new Color(0.09f, 0.11f, 0.1f), 0.4f), false);
+            var signText = new GameObject("CafeSignText").AddComponent<TMPro.TextMeshPro>();
+            signText.transform.SetParent(cafe, false);
+            signText.transform.localPosition = new Vector3(0f, 4.2f, -0.17f);
+            signText.rectTransform.sizeDelta = new Vector2(5.6f, 0.8f);
+            signText.text = "SUNSET CAFE";
+            signText.fontSize = 6.5f;
+            signText.characterSpacing = 12f;
+            signText.alignment = TMPro.TextAlignmentOptions.Center;
+            signText.color = new Color(0.93f, 0.78f, 0.45f);
 
             // Balcony slab, railings, decor
             var balcony = Group("Balcony", env).transform;
@@ -121,18 +138,26 @@ namespace AcrophobiaVR.EditorTools
             SafetyGlass("GlassFrontRight", balcony, new Vector3(-4f, B, -3f), new Vector3(5f, B, -3f), 1.05f, glass);
             SafetyGlass("GlassFrontLeft", balcony, new Vector3(-7f, B, -3f), new Vector3(-6f, B, -3f), 1.05f, glass);
             SafetyGlass("GlassSideR", balcony, new Vector3(5f, B, -3f), new Vector3(5f, B, -0.75f), 1.05f, glass);
-            for (int t = 0; t < 3; t++)
+            // Photo-scanned bistro sets (Poly Haven, CC0); simple tables if the scan is missing.
+            float[] setX = { -2.6f, 1.2f };
+            for (int t = 0; t < setX.Length; t++)
             {
-                float x = -2.5f + t * 2.2f;
-                Cyl("TableLeg", balcony, new Vector3(x, B, -0.8f), 0.05f, 0.72f, metal);
-                Cyl("TableTop", balcony, new Vector3(x, B + 0.72f, -0.8f), 0.4f, 0.04f, Mat("Marble", new Color(0.95f, 0.95f, 0.93f), 0.7f));
+                var set = PolyProp("outdoor_table_chair_set_01", balcony, new Vector3(setX[t], B, -0.75f), t == 0 ? 0f : 180f);
+                if (set != null) { SolidBounds(set); continue; }
+                Cyl("TableLeg", balcony, new Vector3(setX[t], B, -0.8f), 0.05f, 0.72f, metal);
+                Cyl("TableTop", balcony, new Vector3(setX[t], B + 0.72f, -0.8f), 0.4f, 0.04f, Mat("Marble", new Color(0.95f, 0.95f, 0.93f), 0.7f));
             }
+            // Festoon lights: small bulbs hanging from a sagging black cable.
+            var cable = Mat("Cable", new Color(0.03f, 0.03f, 0.03f), 0.4f);
+            Vector3 Festoon(int i) => new Vector3(-6.8f + i * 1.0f, B + 2.6f - Mathf.Sin(i / 11f * Mathf.PI) * 0.35f, -2.6f);
             for (int s = 0; s < 12; s++)
-                Sphere("StringLight", balcony, new Vector3(-6.8f + s * 1.0f, B + 2.6f - Mathf.Sin(s / 11f * Mathf.PI) * 0.35f, -2.6f), 0.1f, Glow("BulbWarm", new Color(1f, 0.85f, 0.5f), 4f));
-            Cyl("Umbrella Pole", balcony, new Vector3(3.6f, B, -1.2f), 0.04f, 2.3f, metal);
-            Cyl("Umbrella", balcony, new Vector3(3.6f, B + 2.2f, -1.2f), 1.3f, 0.12f, cloth, false);
+            {
+                if (s < 11) Bar("FestoonCable", balcony, Festoon(s) + Vector3.up * 0.06f, Festoon(s + 1) + Vector3.up * 0.06f, 0.008f, cable, false);
+                Bar("BulbHolder", balcony, Festoon(s) + Vector3.up * 0.06f, Festoon(s) + Vector3.up * 0.02f, 0.015f, cable, false);
+                Sphere("StringLight", balcony, Festoon(s), 0.05f, Glow("BulbWarm", new Color(1f, 0.85f, 0.5f), 4f));
+            }
             Box("CafeDoor", balcony, new Vector3(4f, B + 1.1f, 0.02f), new Vector3(1.4f, 2.2f, 0.1f), Mat("DoorWood", new Color(0.35f, 0.2f, 0.12f)), false);
-            Box("DoorSign", balcony, new Vector3(4f, B + 2.45f, -0.05f), new Vector3(1.2f, 0.3f, 0.05f), Glow("ExitGreen", new Color(0.3f, 1f, 0.5f), 2f), false);
+            SignBoard("DoorSign", balcony, new Vector3(4f, B + 2.45f, -0.05f), new Vector2(0.9f, 0.28f), "EXIT", Glow("ExitSignGreen", new Color(0.05f, 0.45f, 0.18f), 0.8f), Color.white, 2f);
 
             // Glass skywalk extension (left end)
             var sky = Group("GlassSkywalk", env).transform;
@@ -166,6 +191,9 @@ namespace AcrophobiaVR.EditorTools
                 Box("Shelf", env, new Vector3(potX[i], B + 0.72f, -3.32f), new Vector3(0.7f, 0.06f, 0.4f), wood);
                 Bar("ShelfBracket", env, new Vector3(potX[i], B + 0.7f, -3.5f), new Vector3(potX[i], B + 0.3f, -3.02f), 0.04f, metal);
                 var pot = Cyl("Pot", game, new Vector3(potX[i], B + 0.75f, -3.32f), 0.15f, 0.26f, Mat("Terracotta", new Color(0.75f, 0.4f, 0.25f)), true, false);
+                // Photo-scanned clay pot as the visual; the cylinder keeps its collider for the watering logic.
+                if (PolyProp("planter_pot_clay", game, new Vector3(potX[i], B + 0.75f, -3.32f), 0f, 1f, 0.28f) != null)
+                    pot.GetComponent<Renderer>().enabled = false;
                 var fp = pot.AddComponent<FlowerPot>();
                 var flower = Group("Flower", game).transform;
                 flower.position = new Vector3(potX[i], B + 1.01f, -3.32f);
@@ -180,6 +208,10 @@ namespace AcrophobiaVR.EditorTools
             var spoutBar = Bar("Spout", can.transform, new Vector3(0, -0.02f, 0.08f), new Vector3(0, 0.08f, 0.3f), 0.03f, Mat("CanGreen", new Color(0.3f, 0.65f, 0.45f), 0.6f, 0.3f), false, false);
             Bar("Handle", can.transform, new Vector3(0, 0.12f, -0.1f), new Vector3(0, 0.12f, 0.06f), 0.025f, metal, false, false);
             var spout = Point("SpoutTip", can.transform, new Vector3(0, 0.09f, 0.31f));
+            // Photo-scanned metal watering can as the visual (the primitive parts stay as hidden fallbacks).
+            if (PolyProp("watering_can_metal_01", can.transform, new Vector3(0f, -0.12f, 0f), 0f, 1f, 0.3f) != null)
+                foreach (var part in new[] { canBody.transform, spoutBar.transform, can.transform.Find("Handle") })
+                    if (part != null) part.GetComponent<Renderer>().enabled = false;
             var wc = can.AddComponent<WateringCan>();
             wc.spout = spout;
             wc.water = WaterStream(spout);
@@ -194,15 +226,24 @@ namespace AcrophobiaVR.EditorTools
             // Street sights to spot by looking down
             var busker = LookTarget("Busker", game, new Vector3(1.5f, 0.16f, -6.5f), 0.5f);
             Person(busker, Vector3.zero, Mat("Jacket", new Color(0.2f, 0.45f, 0.75f)), skin);
-            Box("Guitar", busker, new Vector3(0.25f, 0.9f, -0.2f), new Vector3(0.35f, 0.5f, 0.1f), Mat("GuitarWood", new Color(0.7f, 0.45f, 0.2f)), false, false);
+            // Between songs: a real acoustic guitar leaning against the busker's leg (box fallback).
+            var guitar = Model("Props/Guitar", busker, new Vector3(0.32f, 0f, 0.12f), 1.0f, 75f);
+            if (guitar != null) guitar.transform.localRotation = Quaternion.Euler(0f, 0f, -12f) * guitar.transform.localRotation;
+            else Box("Guitar", busker, new Vector3(0.25f, 0.9f, -0.2f), new Vector3(0.35f, 0.5f, 0.1f), Mat("GuitarWood", new Color(0.7f, 0.45f, 0.2f)), false, false);
             Cyl("Hat", busker, new Vector3(0.6f, 0, -0.3f), 0.18f, 0.08f, Mat("Felt", new Color(0.2f, 0.2f, 0.2f)), false, false);
 
             var fountain = LookTarget("Fountain", game, new Vector3(-9f, 0.16f, -18.5f), 1.2f);
-            Cyl("Basin", fountain, Vector3.zero, 1.6f, 0.5f, Mat("Stone", new Color(0.75f, 0.75f, 0.78f)), true, false);
-            Cyl("Water", fountain, new Vector3(0, 0.45f, 0), 1.45f, 0.05f, Mat("Pond", new Color(0.35f, 0.65f, 0.85f), 0.95f), false, false);
-            Cyl("Column", fountain, Vector3.zero, 0.2f, 1.4f, Mat("Stone", new Color(0.75f, 0.75f, 0.78f)), false, false);
+            // Tiered stone fountain (Objaverse / Sketchfab, CC-BY), 3.4 m across; primitive basin as a fallback.
+            var fountainModel = Model("Props/Fountain", fountain, Vector3.zero, 1.3f);
+            if (fountainModel != null) SolidBounds(fountainModel);
+            else
+            {
+                Cyl("Basin", fountain, Vector3.zero, 1.6f, 0.5f, Mat("Stone", new Color(0.75f, 0.75f, 0.78f)), true, false);
+                Cyl("Water", fountain, new Vector3(0, 0.45f, 0), 1.45f, 0.05f, Mat("Pond", new Color(0.35f, 0.65f, 0.85f), 0.95f), false, false);
+                Cyl("Column", fountain, Vector3.zero, 0.2f, 1.4f, Mat("Stone", new Color(0.75f, 0.75f, 0.78f)), false, false);
+            }
             var splash = WaterStream(fountain);
-            splash.transform.localPosition = new Vector3(0, 1.45f, 0);
+            splash.transform.localPosition = new Vector3(0, fountainModel != null ? 1.3f : 1.45f, 0);
             splash.transform.localRotation = Quaternion.Euler(-90, 0, 0);
             var splashMain = splash.main;
             splashMain.playOnAwake = true;
@@ -210,7 +251,8 @@ namespace AcrophobiaVR.EditorTools
 
             var dog = LookTarget("Dog", game, new Vector3(8f, 0.16f, -18f), 0.5f);
             // Gemini-made model; primitive fallback if the file is missing.
-            if (Model("Biscuit", dog, Vector3.zero, 0.6f) == null)
+            // Realistic scanned/sculpted animals (Objaverse / Sketchfab, CC-BY - see Models/Animals/CREDITS.txt) first.
+            if (Model("Animals/Biscuit", dog, Vector3.zero, 0.62f) == null && Model("Biscuit", dog, Vector3.zero, 0.6f) == null)
             {
                 var dogBody = Group("DogBody", dog);
                 var fur = Mat("Fur", new Color(0.85f, 0.65f, 0.35f));
@@ -264,7 +306,8 @@ namespace AcrophobiaVR.EditorTools
             startle.fleeDirection = new Vector3(0.4f, 0f, -1f);
             startle.bodyMaterial = Mat("PigeonGrey", new Color(0.55f, 0.57f, 0.62f), 0.35f);
             startle.wingMaterial = Mat("PigeonWing", new Color(0.42f, 0.44f, 0.5f), 0.3f);
-            startle.birdPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Pigeon.fbx");
+            startle.birdPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Animals/Pigeon.fbx")
+                ?? UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Pigeon.fbx");
             var ledgeBeam = ledgeRoot.gameObject.AddComponent<BalanceBeam>();
             ledgeBeam.start = Point("Start", ledgeRoot, new Vector3(5.0f, B, -0.2f));
             ledgeBeam.end = Point("End", ledgeRoot, new Vector3(10.0f, B, -0.2f));
@@ -279,7 +322,7 @@ namespace AcrophobiaVR.EditorTools
             parrot.transform.position = new Vector3(9.6f, B + 0.02f, -0.2f);
             parrot.transform.rotation = Quaternion.Euler(0, -90, 0);
             // Gemini-made model (Assets/AcrophobiaVR/Models/Kiwi.fbx); primitive fallback if it is missing.
-            if (Model("Kiwi", parrot.transform, Vector3.zero, 0.42f) == null)
+            if (Model("Animals/Kiwi", parrot.transform, Vector3.zero, 0.42f) == null && Model("Kiwi", parrot.transform, Vector3.zero, 0.42f) == null)
             {
                 var feathers = Mat("ParrotGreen", new Color(0.2f, 0.75f, 0.3f), 0.5f);
                 Prim(PrimitiveType.Capsule, "Body", parrot.transform, new Vector3(0, 0.2f, 0), new Vector3(0.16f, 0.16f, 0.16f), feathers, false, false);
@@ -347,6 +390,28 @@ namespace AcrophobiaVR.EditorTools
 
             Star(game, new Vector3(10.35f, B + 1.1f, -0.55f));
             Star(game, new Vector3(-9.4f, RoofTop + 1.3f, -0.05f)); // lean over the roof parapet
+
+            // Photo-scanned street dressing (CC0 Poly Haven).
+            var dress = Group("ScanDressing", env).transform;
+            PolyProp("metal_trash_can", dress, new Vector3(7.2f, 0.16f, -4.8f), 20f);
+            PolyProp("trashbag", dress, new Vector3(7.9f, 0.16f, -5.1f), 60f);
+            PolyProp("trashbag", dress, new Vector3(7.6f, 0.16f, -4.4f), 200f);
+            PolyProp("metal_trash_can", dress, new Vector3(-8.5f, 0.16f, -5.2f), -30f);
+            PolyProp("utility_box_01", dress, new Vector3(-10.5f, 0.16f, -4.6f), 90f);
+            PolyProp("utility_box_02", dress, new Vector3(13.5f, 0.16f, -4.4f), 0f);
+            PolyProp("fire_hydrant", dress, new Vector3(-3.2f, 0.16f, -7.4f), 90f);
+            foreach (float mx in new[] { -26f, -4f, 18f })
+                PolyProp("water_manhole_cover", dress, new Vector3(mx, 0.03f, -12f), 15f);
+            // Zebra crossing with a traffic light on each kerb (Objaverse / Sketchfab, CC-BY - see Models/Props/CREDITS.txt).
+            var zebra = Mat("ZebraPaint", new Color(0.92f, 0.92f, 0.9f), 0.25f);
+            for (int k = 0; k < 7; k++)
+                Box("ZebraStripe", dress, new Vector3(-14f + (k - 3) * 0.95f, 0.026f, -12f), new Vector3(0.5f, 0.01f, 7.4f), zebra, false);
+            Model("Props/TrafficLight", dress, new Vector3(-17.6f, 0.16f, -8.4f), 3.2f, 90f);
+            Model("Props/TrafficLight", dress, new Vector3(-10.4f, 0.16f, -15.6f), 3.2f, -90f);
+            // Patio umbrella over the roof-terrace benches.
+            Model("Props/PatioUmbrella", dress, new Vector3(-5.2f, RoofY + 0.05f, 8.5f), 2.4f, 20f);
+            // A potted money tree in the balcony corner.
+            PolyProp("pachira_aquatica_01", dress, new Vector3(-6.45f, B, -0.45f), 30f, 1f, 1.6f);
 
             var lc = CommonLevel(0, "Level 1 - The Cafe", new Vector3(0f, B, -1.6f), 180f, 0f, 30f, 0.6f);
             lc.objectives = new Objective[] { water, lookBusker, lookFountain, lookDog, reach, rescue, climbRoof, ring };

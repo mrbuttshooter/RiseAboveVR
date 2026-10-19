@@ -23,3 +23,14 @@ parallel round: Kiwi (shorter legs), Mittens (flush stripes, no brows), pigeon (
 Final models (all Argon): Kiwi, Mittens, Biscuit, Helicopter, Pip (separate flapping wings),
 Pigeon (separate flapping wings), Pedestrian (recoloured per person in the game).
 Final scripts: `scripts/*_rargon*.py`. Earlier Flash versions are kept for comparison.
+
+## Realistic pass (2026-10-19/20)
+Goal: replace cartoon art with realistic assets. Code-generated organic shapes (animals, people) never looked real,
+so Gemini is used where it is strong - hard-surface objects with baked PBR textures - and real scans fill the rest
+(see `../AssetPipeline/README.md`).
+- `realistic/rules_bldg.txt`, `rules_car.txt`, `rules_prop.txt` - shared rules (bake albedo + normal at 2048, one material).
+- `realistic/briefs/` - per-object briefs plus `fb_*.txt` art-direction feedback rounds.
+- `realistic/scripts/` - approved scripts: 4 city buildings, 4 cars, the shipping container, the site cabin and the
+  camera drone that is now Pip. Small mechanical fixes were applied where Argon slipped (e.g. `Matrix.Euler` ->
+  `Euler(...).to_matrix()`, a miswired node link, a stray space in a variable name).
+- Long scripts (2000+ lines) can hit the CLI print timeout and come back truncated - ask for "under 1200 lines".

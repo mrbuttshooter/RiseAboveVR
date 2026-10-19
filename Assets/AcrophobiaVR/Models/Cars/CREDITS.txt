@@ -1,0 +1,4 @@
+Third-party car models (Objaverse dataset, originally on Sketchfab), used under their Creative Commons licence.
+CarHatch / CarVan / CarTaxi / CarSuv were generated for this project with Gemini (Argon).
+
+CarSuvReal.fbx: "FPIU 2020 Version 2" by David_Holiday - CC Attribution - https://sketchfab.com/3d-models/40903b09601c4e15b97f8e43ca42d449 (decimated to 15%)

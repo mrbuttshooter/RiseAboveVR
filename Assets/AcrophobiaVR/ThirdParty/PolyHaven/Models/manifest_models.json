@@ -1,0 +1,129 @@
+{
+ "source": "https://polyhaven.com (CC0)",
+ "assets": {
+  "watering_can_metal_01": {
+   "fbx": 396140,
+   "diff": 619613,
+   "nor_gl": 725001
+  },
+  "cement_bag": {
+   "fbx": 47596,
+   "diff": 616339,
+   "nor_gl": 397422
+  },
+  "adjustable_wrench": {
+   "fbx": 235708,
+   "diff": 783317,
+   "nor_gl": 791361
+  },
+  "outdoor_table_chair_set_01": {
+   "fbx": 342172
+  },
+  "painted_wooden_bench": {
+   "fbx": 44844,
+   "diff": 545216,
+   "nor_gl": 830104
+  },
+  "planter_pot_clay": {
+   "fbx": 130252,
+   "diff": 596319,
+   "nor_gl": 506446
+  },
+  "metal_trash_can": {
+   "fbx": 431724,
+   "diff": 551939,
+   "nor_gl": 842945
+  },
+  "trashbag": {
+   "fbx": 151148,
+   "diff": 332301,
+   "nor_gl": 573449
+  },
+  "wooden_crate_01": {
+   "fbx": 199452,
+   "diff": 711292,
+   "nor_gl": 594076
+  },
+  "barrel_03": {
+   "fbx": 63996,
+   "diff": 149997,
+   "nor_gl": 126707
+  },
+  "propane_tank": {
+   "fbx": 186636,
+   "diff": 702492,
+   "nor_gl": 659305
+  },
+  "utility_box_01": {
+   "fbx": 140860,
+   "diff": 558681,
+   "nor_gl": 557001
+  },
+  "street_lamp_01": {
+   "fbx": 941804,
+   "diff": 307889,
+   "nor_gl": 438623
+  },
+  "exterior_aircon_unit": {
+   "fbx": 626444
+  },
+  "water_manhole_cover": {
+   "fbx": 201180,
+   "diff": 448420,
+   "nor_gl": 1008913
+  },
+  "utility_box_02": {
+   "fbx": 187484,
+   "diff": 553096,
+   "nor_gl": 552902
+  },
+  "wooden_ladder": {
+   "fbx": 258588,
+   "diff": 758088,
+   "nor_gl": 750034
+  },
+  "plastic_crate_01": {
+   "fbx": 542572,
+   "diff": 518288,
+   "nor_gl": 884228
+  },
+  "cardboard_box_01": {
+   "fbx": 546524,
+   "diff": 567741,
+   "nor_gl": 817424
+  },
+  "hand_truck": {
+   "fbx": 402700,
+   "diff": 802329,
+   "nor_gl": 944148
+  },
+  "portable_welding_cart": {
+   "fbx": 786252,
+   "diff": 705644,
+   "nor_gl": 469656
+  },
+  "covered_car": {
+   "fbx": 422700,
+   "diff": 558004,
+   "nor_gl": 641340
+  },
+  "concrete_road_barrier_02": {
+   "fbx": 1972300,
+   "diff": 741673,
+   "nor_gl": 923479
+  },
+  "potted_plant_04": {
+   "fbx": 282780,
+   "diff": 577545,
+   "nor_gl": 817786
+  },
+  "pachira_aquatica_01": {
+   "fbx": 2481564
+  },
+  "fire_hydrant": {
+   "fbx": 2678188,
+   "diff": 570746,
+   "nor_gl": 490552
+  }
+ }
+}

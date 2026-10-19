@@ -109,6 +109,20 @@ namespace AcrophobiaVR.EditorTools
             var root = Group("Car", parent);
             var t = root.transform;
 
+            // Realistic baked car models (Gemini Argon): yellow means a taxi, otherwise a seeded mix.
+            string[] models = { "CarHatch", "CarSuvReal", "CarVan", "CarTaxi" };
+            bool yellow = bodyColor.r > 0.8f && bodyColor.g > 0.7f && bodyColor.b < 0.5f;
+            string pick = yellow ? "CarTaxi" : models[rng.Next(models.Length - 1)];
+            if (Model("Cars/" + pick, t, Vector3.zero, 0f) != null)
+            {
+                var m = root.AddComponent<LoopMover>();
+                m.points = loop;
+                m.speed = speed;
+                m.startOffset = offset;
+                PlaceOnLoop(t, loop, offset);
+                return root;
+            }
+
             var paint = Mat("CarPaint_" + ColorUtility.ToHtmlStringRGB(bodyColor), bodyColor, 0.85f, 0.5f);
             var glass = Mat("CarGlass", new Color(0.12f, 0.15f, 0.2f), 0.95f, 0.2f);
             var tyre = Mat("Tyre", new Color(0.05f, 0.05f, 0.05f), 0.2f);
@@ -191,6 +205,8 @@ namespace AcrophobiaVR.EditorTools
         public static void StreetLamp(Transform parent, Vector3 basePos, float yaw)
         {
             var g = Anchor("StreetLamp", parent, basePos, yaw);
+            // Photo-scanned CC0 lamp post (Poly Haven), scaled to a 4.8 m street lamp.
+            if (PolyProp("street_lamp_01", g, Vector3.zero, 0f, 1f, 4.8f) != null) return;
             var metal = LampMetal;
             Cyl("Base", g, Vector3.zero, 0.14f, 0.4f, metal, true, true);
             // No collider on the pole: a player falling off a balcony must not end up balanced on top of it.
@@ -206,6 +222,8 @@ namespace AcrophobiaVR.EditorTools
         public static void Bench(Transform parent, Vector3 pos, float yaw)
         {
             var g = Anchor("Bench", parent, pos, yaw);
+            // Photo-scanned CC0 bench (Poly Haven) when available.
+            if (PolyProp("painted_wooden_bench", g, Vector3.zero) != null) return;
             var wood = BenchWood;
             var metal = LampMetal;
 
@@ -255,7 +273,10 @@ namespace AcrophobiaVR.EditorTools
 
             float sc = R(rng, 0.95f, 1.03f);
 
-            // Gemini Argon pedestrian model, recoloured per person (jacket / skin / hair / trousers).
+            // Realistic CC0 MakeHuman people (10 variants: ages, ethnicities, outfits), at their natural height.
+            int variant = rng.Next(1, 11);
+            if (Model("People/ped" + variant.ToString("00"), g, Vector3.zero, 0f, R(rng, -25f, 25f)) != null) return;
+            // Fallback: Gemini Argon pedestrian model, recoloured per person (jacket / skin / hair / trousers).
             var person = Model("Pedestrian", g, Vector3.zero, 1.75f * sc);
             if (person != null)
             {
@@ -332,6 +353,7 @@ namespace AcrophobiaVR.EditorTools
             {
                 float w = Mathf.Min(R(rng, 1.0f, 1.6f), hx), d = Mathf.Min(R(rng, 1.0f, 1.6f), hz), h = R(rng, 0.8f, 1.2f);
                 if (!TryPlace(rng, used, hx, hz, w, d, 0.4f, out Vector2 p)) continue;
+                if (PolyProp("exterior_aircon_unit", g, new Vector3(p.x, 0f, p.y), rng.Next(4) * 90f) != null) continue;
                 Box("ACUnit", g, new Vector3(p.x, h * 0.5f, p.y), new Vector3(w, h, d), acMat, false, true);
                 Cyl("FanGrille", g, new Vector3(p.x, h, p.y), Mathf.Min(w, d) * 0.35f, 0.05f, grille, false, true);
             }

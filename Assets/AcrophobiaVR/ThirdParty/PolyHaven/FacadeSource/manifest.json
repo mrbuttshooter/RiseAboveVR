@@ -1,0 +1,82 @@
+{
+ "red_bricks_04_diff.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/red_bricks_04/red_bricks_04_diff_2k.jpg",
+  "md5": "31853e9c8519c54a0df96cbe3dd7f31f",
+  "bytes": 1033535
+ },
+ "red_bricks_04_nor_gl.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/red_bricks_04/red_bricks_04_nor_gl_2k.jpg",
+  "md5": "96757e0dfdb0d0f6bcd48e71d12c0d60",
+  "bytes": 1175166
+ },
+ "red_bricks_04_rough.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/red_bricks_04/red_bricks_04_rough_2k.jpg",
+  "md5": "c1e4375e73a63e6573f418d62863f91c",
+  "bytes": 862533
+ },
+ "red_bricks_04_disp.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/red_bricks_04/red_bricks_04_disp_2k.jpg",
+  "md5": "2efc074e44d371bc4607edd6e6401808",
+  "bytes": 260391
+ },
+ "beige_wall_001_diff.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/beige_wall_001/beige_wall_001_diff_2k.jpg",
+  "md5": "c927ac1136767f1df758ae064f50a2d1",
+  "bytes": 235868
+ },
+ "beige_wall_001_nor_gl.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/beige_wall_001/beige_wall_001_nor_gl_2k.jpg",
+  "md5": "127b2f5f2f8c2e57b1f08b263c0690bd",
+  "bytes": 815507
+ },
+ "beige_wall_001_rough.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/beige_wall_001/beige_wall_001_rough_2k.jpg",
+  "md5": "6c2a7eb786d436459c231e9d230fb3cc",
+  "bytes": 656368
+ },
+ "beige_wall_001_disp.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/beige_wall_001/beige_wall_001_disp_2k.jpg",
+  "md5": "2bc0b051a7eacf17eb17a4c77453e8ec",
+  "bytes": 569866
+ },
+ "concrete_wall_008_diff.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_wall_008/concrete_wall_008_diff_2k.jpg",
+  "md5": "9e834dad5c07a3ba452a2ad0f1454c9f",
+  "bytes": 2666189
+ },
+ "concrete_wall_008_nor_gl.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_wall_008/concrete_wall_008_nor_gl_2k.jpg",
+  "md5": "deca87f9fa074c7f041d23178f74ec95",
+  "bytes": 2342650
+ },
+ "concrete_wall_008_rough.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_wall_008/concrete_wall_008_rough_2k.jpg",
+  "md5": "8b4997c293727d89322a7dbe30ae34ae",
+  "bytes": 1458273
+ },
+ "concrete_wall_008_disp.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_wall_008/concrete_wall_008_disp_2k.jpg",
+  "md5": "5bb8b340c56eb483f8fdb69b6ff29d6f",
+  "bytes": 777437
+ },
+ "rusty_painted_metal_diff.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rusty_painted_metal/rusty_painted_metal_diff_2k.jpg",
+  "md5": "dd4f975d539100c4d31fa91d41e1ea71",
+  "bytes": 1930544
+ },
+ "rusty_painted_metal_nor_gl.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rusty_painted_metal/rusty_painted_metal_nor_gl_2k.jpg",
+  "md5": "f9fe4bf3312f06b0eacd7c57470d6285",
+  "bytes": 2293576
+ },
+ "rusty_painted_metal_rough.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rusty_painted_metal/rusty_painted_metal_rough_2k.jpg",
+  "md5": "a50954dcd81fa03fc917d4b188ff8790",
+  "bytes": 1342923
+ },
+ "rusty_painted_metal_disp.jpg": {
+  "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rusty_painted_metal/rusty_painted_metal_disp_2k.jpg",
+  "md5": "eb027ebd9d64e76d885ffe0fb0a4bcf7",
+  "bytes": 649694
+ }
+}

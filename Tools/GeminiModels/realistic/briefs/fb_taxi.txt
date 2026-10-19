@@ -1,0 +1,7 @@
+
+A previous attempt produced a recognisable car, but with these defects. Fix them in a COMPLETE rewrite from scratch:
+- Every part must be attached to the body: no floating pieces. Pillars sit exactly on the body edge between the windscreen and the side windows; mirrors attach to the door at the A-pillar base with a short arm; bumpers are part of the body silhouette, not blocks sticking out.
+- Front fascia: one continuous smooth curved surface (hood edge -> headlights -> bumper -> lower grille); headlights are shaped lenses FLUSH with the body, not boxes.
+- Wheels fill the arches (2-3 cm gap), tyres touch the ground, body sits at a realistic ride height.
+- Check every coordinate against the brief's dimensions before writing it.
+- Taxi specifics: the A-pillars floated outside the body and the black front bumper was a protruding box. Body-coloured upper bumper, black lower grille only.

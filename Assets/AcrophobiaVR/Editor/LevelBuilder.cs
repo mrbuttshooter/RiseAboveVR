@@ -117,8 +117,10 @@ namespace AcrophobiaVR.EditorTools
             }
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogColor = fogColor;
-            RenderSettings.fogDensity = 0.004f;
+            // Real aerial haze is thin and only faintly tinted by the sun: desaturate the mood colour and keep it light.
+            float lum = fogColor.r * 0.3f + fogColor.g * 0.59f + fogColor.b * 0.11f;
+            RenderSettings.fogColor = Color.Lerp(fogColor, new Color(lum, lum, lum * 1.04f), 0.45f);
+            RenderSettings.fogDensity = 0.0022f;
         }
 
         /// <summary>Common objects for every level: rig, controller, Pip, audio, effects, Calm Meadow.</summary>

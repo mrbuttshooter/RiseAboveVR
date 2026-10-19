@@ -10,8 +10,11 @@ namespace AcrophobiaVR.EditorTools
         {
             var scene = NewScene();
             Atmosphere(Sky("SkyGolden", new Color(0.78f, 0.56f, 0.5f), new Color(0.3f, 0.28f, 0.3f), 0.07f, 1.15f, 1.35f),
-                new Color(0.95f, 0.7f, 0.55f), new Color(0.9f, 0.7f, 0.6f));
-            Sun(new Vector3(6, -70, 0), new Color(1f, 0.68f, 0.42f), 1.25f);
+                new Color(0.78f, 0.77f, 0.8f), new Color(0.9f, 0.7f, 0.6f));
+            // 150 m up you see kilometres of city: thinner, cooler aerial haze so distant towers keep their own colours.
+            RenderSettings.fogDensity = 0.0014f;
+            // Golden hour, but a real one: warm, not orange (the old 1 / 0.68 / 0.42 painted the whole city peach).
+            Sun(new Vector3(6, -70, 0), new Color(1f, 0.8f, 0.62f), 1.25f);
 
             const float H = 150f;
             var env = Group("Environment").transform;
@@ -30,8 +33,10 @@ namespace AcrophobiaVR.EditorTools
             var windowGlow = Glow("WindowWarm", new Color(1f, 0.8f, 0.5f), 1.5f);
             Material[] palette =
             {
-                towerGlass, Mat("Bldg1", new Color(0.82f, 0.7f, 0.6f)), Mat("Bldg2", new Color(0.7f, 0.62f, 0.58f)),
-                Mat("Bldg4", new Color(0.6f, 0.55f, 0.6f)), Mat("TowerDark", new Color(0.3f, 0.33f, 0.4f), 0.8f, 0.3f),
+                // A downtown skyline is mostly glass and dark curtain walls, with some stone / brick / office blocks.
+                towerGlass, Mat("Bldg1", new Color(0.70f, 0.46f, 0.38f)), Mat("Bldg2", new Color(0.86f, 0.82f, 0.74f)),
+                Mat("Bldg4", new Color(0.48f, 0.36f, 0.32f)), Mat("TowerDark", new Color(0.3f, 0.33f, 0.4f), 0.8f, 0.3f),
+                towerGlass, Mat("TowerDark", new Color(0.3f, 0.33f, 0.4f), 0.8f, 0.3f), Mat("Bldg3", new Color(0.74f, 0.75f, 0.77f)),
             };
 
             // Ground, streets, cars far below
@@ -50,7 +55,7 @@ namespace AcrophobiaVR.EditorTools
                 var loop = new[] { new Vector3(-300, 0, z + 2), new Vector3(300, 0, z + 2), new Vector3(300, 0, z - 2), new Vector3(-300, 0, z - 2) };
                 for (int i = 0; i < 8; i++) Car(env, loop, i / 8f, 9f + i % 3, Mat("Car" + (i % 4), carColors[i % 4], 0.7f, 0.4f), carGlass);
             }
-            City(env, new Vector2(25, 0), 8, 40f, new Vector2(30, 230), new Rect(-30, -30, 110, 60), 303, palette, windowGlow);
+            City(env, new Vector2(25, 0), 8, 40f, new Vector2(30, 230), new Rect(-30, -30, 110, 60), 303, palette, windowGlow, 0f, 200f);
 
             // Tower A (start) and Tower B (cat + fireworks)
             var towers = Group("Towers", env).transform;
@@ -86,8 +91,18 @@ namespace AcrophobiaVR.EditorTools
             SafetyGlass("FenceB_E", towers, new Vector3(58, H, -8), new Vector3(58, H, 8), 1.3f, glass);
             SafetyGlass("FenceB_S", towers, new Vector3(42, H, -8), new Vector3(58, H, -8), 1.3f, glass);
             // Rooftop props
-            Box("ACUnit", towers, new Vector3(-4, H + 0.6f, -4), new Vector3(2.4f, 1.2f, 1.6f), steelDark);
-            Box("ACUnit2", towers, new Vector3(-4, H + 0.6f, 3), new Vector3(2.4f, 1.2f, 1.6f), steelDark);
+            // Photo-scanned AC units (CC0 Poly Haven) with solid colliders; boxes as a fallback.
+            var ac1 = PolyProp("exterior_aircon_unit", towers, new Vector3(-4f, H, -4f), 0f, 1.3f, 0f, 1);
+            if (ac1 != null)
+            {
+                SolidBounds(ac1);
+                SolidBounds(PolyProp("exterior_aircon_unit", towers, new Vector3(-4f, H, 3f), 180f, 1.3f));
+            }
+            else
+            {
+                Box("ACUnit", towers, new Vector3(-4, H + 0.6f, -4), new Vector3(2.4f, 1.2f, 1.6f), steelDark);
+                Box("ACUnit2", towers, new Vector3(-4, H + 0.6f, 3), new Vector3(2.4f, 1.2f, 1.6f), steelDark);
+            }
             Cyl("WaterTank", towers, new Vector3(-5, H, 6), 1.2f, 2.5f, Mat("TankWood", new Color(0.55f, 0.35f, 0.2f)));
             Bar("Antenna", towers, new Vector3(-6.5f, H, -6.5f), new Vector3(-6.5f, H + 12f, -6.5f), 0.15f, steelDark);
             Sphere("AntennaLight", towers, new Vector3(-6.5f, H + 12.2f, -6.5f), 0.35f, Glow("BeaconRed", new Color(1f, 0.2f, 0.15f), 4f));
@@ -258,8 +273,8 @@ namespace AcrophobiaVR.EditorTools
             var cat = Group("Cat", game);
             cat.transform.position = new Vector3(50f, H + 0.02f, 11.5f);
             cat.transform.rotation = Quaternion.Euler(0, 180, 0);
-            // Gemini-made model; primitive fallback if the file is missing.
-            if (Model("Mittens", cat.transform, Vector3.zero, 0.3f) == null)
+            // Photo-scanned calico (Objaverse / Sketchfab, CC-BY - see Models/Animals/CREDITS.txt); stylized model, then primitives as fallbacks.
+            if (Model("Animals/Mittens", cat.transform, Vector3.zero, 0.3f) == null && Model("Mittens", cat.transform, Vector3.zero, 0.3f) == null)
             {
                 var fur = Mat("CatFur", new Color(0.95f, 0.6f, 0.25f));
                 var furWhite = Mat("CatWhite", new Color(0.98f, 0.96f, 0.92f));
@@ -320,26 +335,19 @@ namespace AcrophobiaVR.EditorTools
             flock2.radius = 25f;
             flock2.count = 8;
             flock2.material = Mat("BirdWhite", new Color(0.95f, 0.95f, 0.95f));
-            var cloudMat = Mat("Cloud", new Color(1f, 0.92f, 0.88f), 0f);
-            var rng = new System.Random(5);
-            for (int i = 0; i < 14; i++)
-            {
-                var cloud = Group("Cloud", env);
-                float y = H - 40f + (float)rng.NextDouble() * 60f;
-                float z = -150f + (float)rng.NextDouble() * 300f;
-                for (int k = 0; k < 4; k++)
-                    Sphere("Puff", cloud.transform, new Vector3(k * 4f - 6f, (float)rng.NextDouble() * 2f, (float)rng.NextDouble() * 3f), 6f + (float)rng.NextDouble() * 4f, cloudMat, false, false);
-                var mover = cloud.AddComponent<LoopMover>();
-                mover.points = new[] { new Vector3(-400, y, z), new Vector3(400, y, z) };
-                mover.speed = 1.5f + (float)rng.NextDouble();
-                mover.startOffset = (float)rng.NextDouble();
-            }
+            // Clouds come from the real HDRI sky (sphere puffs read as toys).
 
             Star(game, new Vector3(21.5f, H + 1.15f, 1.95f));
             Star(game, new Vector3(50f, H + 0.9f, 12.45f));
             Star(game, new Vector3(36f, H + 0.5f, -0.9f));
 
             Zone<GoalZone>("Goal (Helipad)", game, new Vector3(50f, H + 1.2f, -1.5f), new Vector3(5.5f, 2.4f, 5.5f));
+
+            // Photo-scanned rooftop dressing (CC0 Poly Haven).
+            var roofDress = Group("ScanDressing", env).transform;
+            PolyProp("utility_box_01", roofDress, new Vector3(3f, H, -5.5f), 0f);
+            PolyProp("utility_box_01", roofDress, new Vector3(5f, H, 5.5f), 180f);
+            PolyProp("utility_box_01", roofDress, new Vector3(54f, H, -5.5f), 0f);
 
             var lc = CommonLevel(2, "Level 3 - The Skyscraper", new Vector3(0f, H, 0f), 90f, 0f, 160f, 0.35f);
             lc.objectives = new Objective[] { reachCradle, reachB, rescue, press };

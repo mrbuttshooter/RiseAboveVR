@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AcrophobiaVR
 {
-    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds, Construction, Rotor }
+    public enum EmitterKind { BuskerGuitar, Fountain, CarEngine, Motor, CafeChatter, Birds, Construction, Rotor, Drone }
 
     /// <summary>
     /// Looping 3D ambient sound source for otherwise silent scene objects (busker, fountain, cars, lift motors,
@@ -64,6 +64,7 @@ namespace AcrophobiaVR
                     minD = 12f; maxD = 600f; kindVolume = 1f; priority = 60;
                     source.dopplerLevel = 1f;
                     break;
+                case EmitterKind.Drone: minD = 0.6f; maxD = 15f; kindVolume = 0.3f; priority = 90; break;
             }
             source.minDistance = minD;
             source.maxDistance = maxD;
@@ -137,6 +138,7 @@ namespace AcrophobiaVR
                 case EmitterKind.CafeChatter: data = GenChatter(rate); break;
                 case EmitterKind.Construction: data = GenConstruction(rate); break;
                 case EmitterKind.Rotor: data = GenRotor(rate); break;
+                case EmitterKind.Drone: data = GenDrone(rate); break;
                 default: data = GenBirds(rate); break;
             }
             if (data == null || data.Length == 0) return null;
@@ -400,6 +402,30 @@ namespace AcrophobiaVR
             }
             var o = LoopCrossfade(d, n, false);
             Normalize(o, 0.8f);
+            return o;
+        }
+
+        /// <summary>2 s small-quadcopter buzz: four propellers at slightly different speeds (beating) plus air hiss.</summary>
+        static float[] GenDrone(int rate)
+        {
+            int n = rate * 2;
+            int fade = rate / 4;
+            int total = n + fade;
+            var d = new float[total];
+            var rng = new System.Random(77);
+            var hiss = new Svf(); hiss.Set(2600f, 0.6f, rate);
+            double[] f = { 212.0, 218.5, 224.0, 231.0 };
+            for (int i = 0; i < total; i++)
+            {
+                double t = (double)i / rate;
+                float v = 0f;
+                foreach (double fi in f)
+                    v += Sin01(fi * t) * 0.5f + Sin01(fi * 2.0 * t) * 0.3f + Sin01(fi * 3.0 * t) * 0.12f;
+                hiss.Tick(Noise(rng));
+                d[i] = v * 0.25f + hiss.Bp * 0.6f;
+            }
+            var o = LoopCrossfade(d, n, false);
+            Normalize(o, 0.6f);
             return o;
         }
 

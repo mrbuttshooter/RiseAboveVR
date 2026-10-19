@@ -34,6 +34,9 @@ namespace AcrophobiaVR
         };
 
         public Transform body;
+        [Tooltip("Pip is a camera drone: electronic chime instead of a chirp, propeller hum while visible.")]
+        public bool drone;
+        AudioSource hum;
         public Transform leftWing;
         public Transform rightWing;
         public Light glow;
@@ -88,7 +91,8 @@ namespace AcrophobiaVR
             if (string.IsNullOrEmpty(line)) return;
             if (Instance != null) Instance.visibleUntil = Mathf.Max(Instance.visibleUntil, Time.time + seconds + 1.5f);
             HeadHud.Instance.ShowSubtitle("Pip", line, seconds);
-            if (Instance != null) ProceduralAudio.PlayChirpAt(Instance.transform.position);
+            if (Instance != null && Instance.drone) ProceduralAudio.PlayChime(1.7f);
+            else if (Instance != null) ProceduralAudio.PlayChirpAt(Instance.transform.position);
             else ProceduralAudio.PlayChirp();
             if (Instance != null) Instance.Pulse();
         }
@@ -118,6 +122,8 @@ namespace AcrophobiaVR
             if (!wanted)
                 target = head.position + Vector3.up * 4.5f - flatFwd * 2f + right * 3f;
             SetShown(wanted || (transform.position - head.position).sqrMagnitude < 3.6f * 3.6f);
+            if (hum == null && drone) hum = GetComponentInChildren<AudioSource>();
+            if (hum != null) hum.mute = !shown;
             transform.position = Vector3.SmoothDamp(transform.position, target, ref velocity, 0.45f);
             Vector3 look = head.position - transform.position;
             if (look.sqrMagnitude > 0.001f)

@@ -14,6 +14,7 @@ namespace AcrophobiaVR
         public Vector3 fleeDirection = Vector3.back;   // the flock's general escape direction (world)
         public Material bodyMaterial;
         public Material wingMaterial;
+        public GameObject birdPrefab;                   // Gemini Argon pigeon (Pigeon + WingL/WingR); null = primitive birds
 
         bool fired;
         float rearmAt;
@@ -28,6 +29,7 @@ namespace AcrophobiaVR
                 // Sitting in a row along the ledge (the object's forward), wings folded.
                 perched[i] = MakeBird(transform.position + transform.forward * (i - 1) * 0.32f + Vector3.up * 0.07f,
                     transform.rotation * Quaternion.Euler(0f, -90f + (i - 1) * 25f, 0f)); // face the street
+                if (birdPrefab != null) continue; // the model's wings are already folded
                 foreach (var w in new[] { "WingL", "WingR" })
                 {
                     var wing = perched[i].transform.Find(w);
@@ -69,13 +71,17 @@ namespace AcrophobiaVR
             var birds = new GameObject[count];
             var vel = new Vector3[count];
             var wings = new Transform[count * 2];
+            var rest = new Quaternion[count * 2];
+            var axis = new Vector3[count * 2];
             Vector3 flee = fleeDirection.normalized;
             for (int i = 0; i < count; i++)
             {
                 Vector3 start = transform.position + Random.insideUnitSphere * 0.3f + Vector3.up * 0.1f;
                 birds[i] = MakeBird(start, Quaternion.identity);
-                wings[i * 2] = birds[i].transform.Find("WingL");
-                wings[i * 2 + 1] = birds[i].transform.Find("WingR");
+                wings[i * 2] = FindDeep(birds[i].transform, "WingL");
+                wings[i * 2 + 1] = FindDeep(birds[i].transform, "WingR");
+                if (wings[i * 2] != null) { rest[i * 2] = wings[i * 2].localRotation; axis[i * 2] = wings[i * 2].parent.InverseTransformDirection(birds[i].transform.forward); }
+                if (wings[i * 2 + 1] != null) { rest[i * 2 + 1] = wings[i * 2 + 1].localRotation; axis[i * 2 + 1] = wings[i * 2 + 1].parent.InverseTransformDirection(birds[i].transform.forward); }
                 // Most flap away from the wall, a couple straight past the player's face.
                 Vector3 toHead = (rig.Head.position - start).normalized;
                 Vector3 v = (i < 2 ? toHead + Vector3.up * 0.6f : flee + Random.insideUnitSphere * 0.6f + Vector3.up * Random.Range(0.4f, 1f));
@@ -91,8 +97,8 @@ namespace AcrophobiaVR
                     birds[i].transform.position += vel[i] * Time.deltaTime;
                     birds[i].transform.rotation = Quaternion.LookRotation(vel[i]);
                     float flap = Mathf.Sin((t + i * 0.13f) * 40f) * 55f;
-                    if (wings[i * 2] != null) wings[i * 2].localRotation = Quaternion.Euler(0f, 0f, flap);
-                    if (wings[i * 2 + 1] != null) wings[i * 2 + 1].localRotation = Quaternion.Euler(0f, 0f, -flap);
+                    if (wings[i * 2] != null) wings[i * 2].localRotation = Quaternion.AngleAxis(flap, axis[i * 2]) * rest[i * 2];
+                    if (wings[i * 2 + 1] != null) wings[i * 2 + 1].localRotation = Quaternion.AngleAxis(-flap, axis[i * 2 + 1]) * rest[i * 2 + 1];
                 }
                 if (t < 0.05f) ProceduralAudio.PlayFlutterAt(transform.position + flee);
                 yield return null;
@@ -100,8 +106,21 @@ namespace AcrophobiaVR
             foreach (var b in birds) if (b != null) Destroy(b);
         }
 
+        static Transform FindDeep(Transform root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true)) if (t.name == name) return t;
+            return null;
+        }
+
         GameObject MakeBird(Vector3 pos, Quaternion rot)
         {
+            if (birdPrefab != null)
+            {
+                var b = Instantiate(birdPrefab, pos, rot * birdPrefab.transform.localRotation, transform);
+                b.name = "Pigeon";
+                foreach (var c in b.GetComponentsInChildren<Collider>(true)) Destroy(c);
+                return b;
+            }
             var root = new GameObject("Pigeon");
             root.transform.SetPositionAndRotation(pos, rot);
             root.transform.SetParent(transform, true);

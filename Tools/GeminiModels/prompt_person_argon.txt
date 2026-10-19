@@ -1,0 +1,13 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+GENERAL RULES
+- Delete everything in the default scene first. Z is up, the model faces -Y, origin at the bottom centre (lowest point at Z=0).
+- Stylized, well-crafted cartoon look (Pixar-like silhouette), readable from several metres in VR. Every part must be CONNECTED: no floating pieces, no gaps between parts (embed joints 1-2 cm into each other).
+- Build from low-poly primitives/bmesh, add Subdivision Surface (level 1-2) and smooth shading where organic, then APPLY all modifiers.
+- Saturated Principled BSDF colours (roughness ~0.45), one material per colour.
+- Read the output path from sys.argv after "--" (e.g. C:/x/name.fbx); create its folder if needed.
+- Export FBX: selected objects only, apply transforms, axis_forward='-Z', axis_up='Y', mesh smooth type FACE.
+- Then render a 900x900 preview PNG (same path with ".png") using EEVEE (pick the engine from scene.render.bl_rna.properties['engine'].enum_items keys), grey world strength 0.45, a sun of strength 3 plus a soft fill light, camera at a 3/4 front view (front-left, slightly above) framing the whole model with ~10% margin.
+- Print the final triangle count with print("TRIS", n).
+- Write valid Python: never pass a positional argument after a keyword argument (e.g. bpy.data.objects.new("Name", data)); clamp parameters to 0..1 before fractional powers; avoid division by zero.
+SUBJECT: a stylized cartoon city pedestrian for a VR game, seen from 6-30 m above on a street, so a clear readable silhouette matters more than detail. 1.75 m tall, standing in a relaxed walking pose (one leg slightly forward), neutral face with simple eyes. Casual clothes: a coloured jacket (use colour (0.2, 0.45, 0.75)), dark jeans, white sneakers, short brown hair. Hands are simple mitten shapes. ONE object named "Pedestrian". 2000-5000 triangles (there will be many of them).

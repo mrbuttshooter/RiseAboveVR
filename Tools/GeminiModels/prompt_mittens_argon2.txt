@@ -1,0 +1,20 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+GENERAL RULES
+- Delete everything in the default scene first. Z is up, the model faces -Y, origin at the bottom centre (lowest point at Z=0).
+- Stylized, well-crafted cartoon look (Pixar-like silhouette), readable from several metres in VR. Every part must be CONNECTED: no floating pieces, no gaps between parts (embed joints 1-2 cm into each other).
+- Build from low-poly primitives/bmesh, add Subdivision Surface (level 1-2) and smooth shading where organic, then APPLY all modifiers.
+- Saturated Principled BSDF colours (roughness ~0.45), one material per colour.
+- Read the output path from sys.argv after "--" (e.g. C:/x/name.fbx); create its folder if needed.
+- Export FBX: selected objects only, apply transforms, axis_forward='-Z', axis_up='Y', mesh smooth type FACE.
+- Then render a 900x900 preview PNG (same path with ".png") using EEVEE (pick the engine from scene.render.bl_rna.properties['engine'].enum_items keys), grey world strength 0.45, a sun of strength 3 plus a soft fill light, camera at a 3/4 front view (front-left, slightly above) framing the whole model with ~10% margin.
+- Print the final triangle count with print("TRIS", n).
+- Write valid Python: never pass a positional argument after a keyword argument (e.g. bpy.data.objects.new("Name", data)); clamp parameters to 0..1 before fractional powers; avoid division by zero.
+
+ART DIRECTION (a previous attempt had problems - avoid them):
+- Tabby stripes must be FLUSH with the fur: assign a darker orange material to bands of FACES on the body/head/tail mesh (bmesh face selection by position + material index). No raised ribbons, no rings around legs or tail.
+- No eyebrows. Big hopeful green eyes looking slightly upward, slit pupils, white highlights.
+- White chest is a smooth soft bib (no spikes). Small soft "w" mouth, pink nose, whiskers.
+- Tail: ONE smooth thick tapered curved tube, raised in a gentle S-curve.
+- Every part connected, cute chunky proportions.
+SUBJECT: "Mittens", a fluffy cartoon house cat for a VR game, standing on all four legs looking up hopefully (it is stranded on a plank at 150 m). About 0.30 m tall at the head, 0.45 m long nose-to-rump. Orange tabby with darker orange stripes (separate stripe geometry slightly raised on the back/head), white muzzle, chest and paws (mittens), pink nose and inner ears, big green eyes with black slit pupils and a white highlight, whiskers (thin tapered cylinders), triangular ears, long curved tail raised in an S-curve. Chunky cute proportions (big head, ~35% of body length). Join everything into ONE object named "Mittens". 6000-14000 triangles.

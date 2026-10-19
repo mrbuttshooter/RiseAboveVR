@@ -52,7 +52,20 @@ namespace AcrophobiaVR
             if (body != null) bodyBaseScale = body.localScale;
             nextIdleLine = Time.time + 120f;
             renderers = GetComponentsInChildren<Renderer>(true);
+            if (leftWing != null)
+            {
+                wingRestL = leftWing.localRotation;
+                wingAxisL = leftWing.parent.InverseTransformDirection(transform.forward);
+            }
+            if (rightWing != null)
+            {
+                wingRestR = rightWing.localRotation;
+                wingAxisR = rightWing.parent.InverseTransformDirection(transform.forward);
+            }
         }
+
+        Quaternion wingRestL = Quaternion.identity, wingRestR = Quaternion.identity;
+        Vector3 wingAxisL = Vector3.forward, wingAxisR = Vector3.forward;
 
         void Start()
         {
@@ -110,9 +123,10 @@ namespace AcrophobiaVR
             if (look.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look), Time.deltaTime * 4f);
 
+            // Flap each wing about the bird's forward axis, starting from its resting pose (works for the model and the primitive Pip).
             float flap = Mathf.Sin(Time.time * 18f) * 35f;
-            if (leftWing != null) leftWing.localRotation = Quaternion.Euler(0f, 0f, flap);
-            if (rightWing != null) rightWing.localRotation = Quaternion.Euler(0f, 0f, -flap);
+            if (leftWing != null) leftWing.localRotation = Quaternion.AngleAxis(flap, wingAxisL) * wingRestL;
+            if (rightWing != null) rightWing.localRotation = Quaternion.AngleAxis(-flap, wingAxisR) * wingRestR;
 
             pulse = Mathf.MoveTowards(pulse, 0f, Time.deltaTime * 1.5f);
             if (body != null) body.localScale = bodyBaseScale * (1f + pulse * 0.25f);

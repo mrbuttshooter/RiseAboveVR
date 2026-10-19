@@ -1,0 +1,17 @@
+IMPORTANT: Do NOT use any tools, do NOT run commands, do NOT read or write files. Answer with text only: the full script.
+Write ONE complete Blender 5.2 Python script (bpy + bmesh + mathutils + math + sys + os only, no addons, no external files, no network, no subprocess). Output ONLY the Python code: no explanation, no markdown fences.
+GENERAL RULES
+- Delete everything in the default scene first. Z is up, the model faces -Y, origin at the bottom centre (lowest point at Z=0).
+- Stylized, well-crafted cartoon look (Pixar-like silhouette), readable from several metres in VR. Every part must be CONNECTED: no floating pieces, no gaps between parts (embed joints 1-2 cm into each other).
+- Build from low-poly primitives/bmesh, add Subdivision Surface (level 1-2) and smooth shading where organic, then APPLY all modifiers.
+- Saturated Principled BSDF colours (roughness ~0.45), one material per colour.
+- Read the output path from sys.argv after "--" (e.g. C:/x/name.fbx); create its folder if needed.
+- Export FBX: selected objects only, apply transforms, axis_forward='-Z', axis_up='Y', mesh smooth type FACE.
+- Then render a 900x900 preview PNG (same path with ".png") using EEVEE (pick the engine from scene.render.bl_rna.properties['engine'].enum_items keys), grey world strength 0.45, a sun of strength 3 plus a soft fill light, camera at a 3/4 front view (front-left, slightly above) framing the whole model with ~10% margin.
+- Print the final triangle count with print("TRIS", n).
+- Write valid Python: never pass a positional argument after a keyword argument (e.g. bpy.data.objects.new("Name", data)); clamp parameters to 0..1 before fractional powers; avoid division by zero.
+
+Your previous script for this subject failed with: SyntaxError: invalid syntax at the line
+    for z_val, scale_ end_s in ((bz_top, 0.85), (bz_bot, 0.75)):
+(a stray space inside a variable name). Rewrite the COMPLETE script carefully, checking every line is valid Python 3.11.
+SUBJECT: a city pigeon (rock dove) for a VR game, perched standing on a ledge, about 0.25 m tall. Plump body, small round head, short dark beak with a white cere, orange eyes, iridescent green-purple neck patch, blue-grey body, two dark bars on each wing, dark tail band, pink-red legs and toes. Build the WINGS as SEPARATE objects named "WingL" and "WingR" (folded against the body sides, each wing's origin at its shoulder joint so it can be rotated to flap). Everything else (body, head, beak, legs, tail) is ONE object named "Pigeon". Parent WingL and WingR to Pigeon (keep transforms). Export all three. 3000-7000 triangles total.

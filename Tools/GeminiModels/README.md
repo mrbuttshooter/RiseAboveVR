@@ -15,4 +15,11 @@ Gemini improves its own script -> repeat until approved (Kiwi took 3 rounds, the
   `blender -b --factory-startup -P scripts/kiwi_r3.py -- C:/out/Kiwi.fbx`).
 
 Generated scripts are refused if they reference networking, subprocesses or file deletion.
-Gemini 4 Argon (stronger at 3D) is Ultra-plan only, so it was not used.
+## Argon batch (2026-10-19)
+Gemini 4 Argon became available on the Google AI Pro plan in Antigravity, so `gen.sh` now defaults to
+"Gemini 4 Argon (High)" (override with `MODEL="Gemini 3.8 Flash (High)" gen.sh ...`). All seven models were
+generated in ONE parallel batch (7 jobs at once), reviewed together, and the weak ones got a second
+parallel round: Kiwi (shorter legs), Mittens (flush stripes, no brows), pigeon (syntax retry).
+Final models (all Argon): Kiwi, Mittens, Biscuit, Helicopter, Pip (separate flapping wings),
+Pigeon (separate flapping wings), Pedestrian (recoloured per person in the game).
+Final scripts: `scripts/*_rargon*.py`. Earlier Flash versions are kept for comparison.

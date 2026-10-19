@@ -478,6 +478,27 @@ namespace AcrophobiaVR.EditorTools
             var root = new GameObject("Pip (Companion)");
             root.transform.position = pos;
             var comp = root.AddComponent<Companion>();
+            // Gemini Argon model with separate WingL / WingR; the primitive Pip below is the fallback.
+            var pipModel = Model("Pip", root.transform, new Vector3(0f, -0.09f, 0f), 0.18f);
+            if (pipModel != null)
+            {
+                comp.body = pipModel.transform;
+                foreach (var t in pipModel.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "WingL") comp.leftWing = t;
+                    else if (t.name == "WingR") comp.rightWing = t;
+                }
+                var glowGo = new GameObject("Glow");
+                glowGo.transform.SetParent(root.transform, false);
+                var gl = glowGo.AddComponent<Light>();
+                gl.type = LightType.Point;
+                gl.range = 1.5f;
+                gl.color = new Color(0.5f, 0.9f, 1f);
+                gl.intensity = 1.2f;
+                gl.shadows = LightShadows.None;
+                comp.glow = gl;
+                return comp;
+            }
             var body = Sphere("Body", root.transform, Vector3.zero, 0.16f, Glow("PipBody", new Color(0.45f, 0.9f, 1f), 1.2f), false, false);
             Sphere("Belly", body.transform, new Vector3(0, -0.12f, 0.2f), 0.7f, Mat("PipBelly", new Color(1f, 0.97f, 0.85f)), false, false);
             Sphere("EyeL", body.transform, new Vector3(-0.22f, 0.15f, 0.42f), 0.18f, Mat("PipEye", new Color(0.05f, 0.05f, 0.08f), 0.9f), false, false);

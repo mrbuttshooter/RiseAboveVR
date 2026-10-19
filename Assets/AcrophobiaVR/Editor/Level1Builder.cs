@@ -264,6 +264,7 @@ namespace AcrophobiaVR.EditorTools
             startle.fleeDirection = new Vector3(0.4f, 0f, -1f);
             startle.bodyMaterial = Mat("PigeonGrey", new Color(0.55f, 0.57f, 0.62f), 0.35f);
             startle.wingMaterial = Mat("PigeonWing", new Color(0.42f, 0.44f, 0.5f), 0.3f);
+            startle.birdPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Pigeon.fbx");
             var ledgeBeam = ledgeRoot.gameObject.AddComponent<BalanceBeam>();
             ledgeBeam.start = Point("Start", ledgeRoot, new Vector3(5.0f, B, -0.2f));
             ledgeBeam.end = Point("End", ledgeRoot, new Vector3(10.0f, B, -0.2f));

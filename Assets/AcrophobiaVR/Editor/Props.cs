@@ -254,6 +254,26 @@ namespace AcrophobiaVR.EditorTools
             var cloth = Mat("Clothes_" + ColorUtility.ToHtmlStringRGB(clothes), clothes, 0.2f);
 
             float sc = R(rng, 0.95f, 1.03f);
+
+            // Gemini Argon pedestrian model, recoloured per person (jacket / skin / hair / trousers).
+            var person = Model("Pedestrian", g, Vector3.zero, 1.75f * sc);
+            if (person != null)
+            {
+                foreach (var r in person.GetComponentsInChildren<Renderer>(true))
+                {
+                    var mats = r.sharedMaterials;
+                    for (int i = 0; i < mats.Length; i++)
+                    {
+                        string n = mats[i] != null ? mats[i].name : "";
+                        if (n.StartsWith("Mat_Jacket")) mats[i] = cloth;
+                        else if (n.StartsWith("Mat_Skin")) mats[i] = skin;
+                        else if (n.StartsWith("Mat_Hair")) mats[i] = hair;
+                        else if (n.StartsWith("Mat_Jeans")) mats[i] = trousers;
+                    }
+                    r.sharedMaterials = mats;
+                }
+                return;
+            }
             g.localScale = Vector3.one * sc;
 
             for (int side = -1; side <= 1; side += 2)

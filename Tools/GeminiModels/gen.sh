@@ -11,7 +11,7 @@ RAW="scripts/${NAME}_r${ROUND}.raw.txt"
 PY="scripts/${NAME}_r${ROUND}.py"
 OUT="E:/Unity_project/_gen3d/out/${NAME}_r${ROUND}.fbx"
 
-"$AGY" --model "Gemini 3.8 Flash (High)" --print-timeout 900s -p "$(cat "$PROMPT_FILE")" > "$RAW" 2> "logs/${NAME}_r${ROUND}.agy.txt"
+"$AGY" --model "${MODEL:-Gemini 4 Argon (High)}" --print-timeout 900s -p "$(cat "$PROMPT_FILE")" > "$RAW" 2> "logs/${NAME}_r${ROUND}.agy.txt"
 # Keep only the code (drop markdown fences / chatter before the first import).
 python - "$RAW" "$PY" <<'EOF'
 import sys, re

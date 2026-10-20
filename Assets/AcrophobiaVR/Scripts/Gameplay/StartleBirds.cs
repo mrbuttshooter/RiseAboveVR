@@ -66,7 +66,6 @@ namespace AcrophobiaVR
             ProceduralAudio.PlayFlutterAt(transform.position);
             ProceduralAudio.PlayChirpAt(transform.position + Vector3.up * 0.3f);
             Haptics.Medium();
-            FearSystem.Spike(0.35f);
 
             var birds = new GameObject[count];
             var vel = new Vector3[count];

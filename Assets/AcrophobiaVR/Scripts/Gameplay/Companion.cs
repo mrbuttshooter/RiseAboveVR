@@ -3,8 +3,8 @@ using UnityEngine;
 namespace AcrophobiaVR
 {
     /// <summary>
-    /// Pip - a little glowing bird-drone that floats beside the player, gives instructions and
-    /// encouragement, and reacts to what happens. Speaks through subtitles plus a chirp.
+    /// Pip - a camera drone that races alongside the player and calls the run like an announcer
+    /// (hints, taunts, time warnings). Speaks through subtitles plus a chirp.
     /// </summary>
     public class Companion : MonoBehaviour
     {
@@ -12,25 +12,39 @@ namespace AcrophobiaVR
 
         public static readonly string[] SlipLines =
         {
-            "Oof! Down you go - that's a heart gone. Back to the checkpoint!",
-            "The ground says hi! Shake it off and try again.",
-            "Whoa! Eyes on where you want to go, not on the drop.",
-            "Splat-free landing, thanks to me. Careful - hearts don't grow on trees!",
+            "Ouch! That's a life gone. Back to the checkpoint - and faster this time!",
+            "Gravity: 1, you: 0. Go again!",
+            "That drop was... educational. The clock is still running!",
+            "Splat. Get up, the timer doesn't care!",
+            "Missed it! Commit to the jump next time.",
         };
 
         public static readonly string[] ReturnLines =
         {
-            "Welcome back! Let's finish this.",
-            "Ready again? I'm right here with you.",
-            "Recharged? Back to the heights!",
+            "Back on your feet - move it!",
+            "Checkpoint! Don't waste it.",
         };
 
         public static readonly string[] EncourageLines =
         {
-            "Nice moves up here!",
-            "Courage stars hide at the scariest spots - have you found them all?",
-            "If I shout 'gust', crouch! Trust me on this one.",
-            "Heart racing? Look up at the sky for a second - it helps.",
+            "Faster! The clock is ticking!",
+            "Stars are worth points - grab them if you dare.",
+            "Gust coming? Crouch, or fly.",
+            "Run, jump, don't look down. Or do - it's a long way!",
+        };
+
+        public static readonly string[] HurryLines =
+        {
+            "Thirty seconds left - MOVE!",
+            "Half a minute! Sprint!",
+        };
+
+        public static readonly string[] NiceLines =
+        {
+            "Nice jump!",
+            "Clean! Keep that pace!",
+            "Ooh, smooth.",
+            "Show-off. Keep going!",
         };
 
         public Transform body;
@@ -114,11 +128,8 @@ namespace AcrophobiaVR
             if (flatFwd.sqrMagnitude < 0.01f) flatFwd = transform.forward;
             Vector3 right = Vector3.Cross(Vector3.up, flatFwd);
             Vector3 target = head.position + flatFwd * 0.9f + right * 0.55f + Vector3.up * (-0.05f + Mathf.Sin(Time.time * 2.1f) * 0.05f);
-            // During a panic wave Pip climbs above the player's head, glowing, so their gaze follows it up to the sky.
-            if (FearSystem.Panicking)
-                target = head.position + flatFwd * 1.1f + Vector3.up * (1.6f + Mathf.Sin(Time.time * 3f) * 0.1f);
-            // Pip only drops in to talk (or help in a panic), then flies off out of sight.
-            bool wanted = Time.time < visibleUntil || FearSystem.Panicking;
+            // Pip only drops in to call the race, then flies off out of sight.
+            bool wanted = Time.time < visibleUntil;
             if (!wanted)
                 target = head.position + Vector3.up * 4.5f - flatFwd * 2f + right * 3f;
             SetShown(wanted || (transform.position - head.position).sqrMagnitude < 3.6f * 3.6f);
@@ -138,7 +149,7 @@ namespace AcrophobiaVR
             if (body != null) body.localScale = bodyBaseScale * (1f + pulse * 0.25f);
             if (glow != null) glow.intensity = 1.2f + pulse * 2f;
 
-            if (Time.time > nextIdleLine && LevelController.Instance != null && LevelController.Instance.Started && !SafeRoom.InSafeRoom)
+            if (Time.time > nextIdleLine && LevelController.Instance != null && LevelController.Instance.Started)
             {
                 nextIdleLine = Time.time + Random.Range(140f, 220f);
                 SayRandom(EncourageLines);

@@ -7,7 +7,6 @@ namespace AcrophobiaVR
     {
         public string label = "Checkpoint";
         public Transform respawnPoint;
-        public bool offerBreathingBreak;
         [TextArea] public string companionLine;
 
         bool reached;
@@ -20,10 +19,8 @@ namespace AcrophobiaVR
             SessionLogger.Log(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, "checkpoint", label);
             HeadHud.Instance.ShowMessage("Checkpoint reached: " + label, 2.5f);
             ProceduralAudio.PlayChime(1f);
-            FearSystem.Relief(0.2f);
             if (!string.IsNullOrEmpty(companionLine)) Companion.Say(companionLine);
-            if (offerBreathingBreak && !BreathingGuide.Active)
-                BreathingGuide.Show(2);
+            LevelController.Instance?.OnCheckpoint(label);
         }
     }
 }

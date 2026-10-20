@@ -318,9 +318,9 @@ namespace AcrophobiaVR.EditorTools
 
         /// <summary>
         /// Rooftop plant inside 80% of the roof: stair/elevator housing with door, 2-5 AC units with fan grilles,
-        /// and 2-3 vent pipes. roofCenter.y = roof top height. Static, no colliders (~18 prims).
+        /// and 2-3 vent pipes. roofCenter.y = roof top height. Static; colliders only when solid (playable roofs).
         /// </summary>
-        public static void RooftopUnits(Transform parent, Vector3 roofCenter, Vector2 roofSize, int seed)
+        public static void RooftopUnits(Transform parent, Vector3 roofCenter, Vector2 roofSize, int seed, bool solid = false)
         {
             var rng = new System.Random(seed);
             float hx = Mathf.Abs(roofSize.x) * 0.4f;
@@ -341,7 +341,7 @@ namespace AcrophobiaVR.EditorTools
             Vector2 hp = Pick(rng, hx, hz, hw * 0.5f, hd * 0.5f);
             if (hw >= 1.2f && hd >= 1.2f) // skip on tiny roofs (would be a thin 2.8m pillar)
             {
-                Box("StairHousing", g, new Vector3(hp.x, hh * 0.5f, hp.y), new Vector3(hw, hh, hd), housingMat, false, true);
+                Box("StairHousing", g, new Vector3(hp.x, hh * 0.5f, hp.y), new Vector3(hw, hh, hd), housingMat, solid, true);
                 Box("HousingCap", g, new Vector3(hp.x, hh + 0.06f, hp.y), new Vector3(hw + 0.15f, 0.12f, hd + 0.15f), housingMat, false, true);
                 Box("Door", g, new Vector3(hp.x, 1.05f, hp.y + hd * 0.5f + 0.02f), new Vector3(0.9f, 2.1f, 0.04f), doorMat, false, true);
                 used.Add(new Rect(hp.x - hw * 0.5f - 0.6f, hp.y - hd * 0.5f - 1.2f, hw + 1.2f, hd + 2.4f));
@@ -353,8 +353,9 @@ namespace AcrophobiaVR.EditorTools
             {
                 float w = Mathf.Min(R(rng, 1.0f, 1.6f), hx), d = Mathf.Min(R(rng, 1.0f, 1.6f), hz), h = R(rng, 0.8f, 1.2f);
                 if (!TryPlace(rng, used, hx, hz, w, d, 0.4f, out Vector2 p)) continue;
-                if (PolyProp("exterior_aircon_unit", g, new Vector3(p.x, 0f, p.y), rng.Next(4) * 90f) != null) continue;
-                Box("ACUnit", g, new Vector3(p.x, h * 0.5f, p.y), new Vector3(w, h, d), acMat, false, true);
+                var scan = PolyProp("exterior_aircon_unit", g, new Vector3(p.x, 0f, p.y), rng.Next(4) * 90f);
+                if (scan != null) { if (solid) SolidBounds(scan); continue; }
+                Box("ACUnit", g, new Vector3(p.x, h * 0.5f, p.y), new Vector3(w, h, d), acMat, solid, true);
                 Cyl("FanGrille", g, new Vector3(p.x, h, p.y), Mathf.Min(w, d) * 0.35f, 0.05f, grille, false, true);
             }
 

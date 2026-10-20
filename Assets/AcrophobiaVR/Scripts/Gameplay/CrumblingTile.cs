@@ -43,7 +43,7 @@ namespace AcrophobiaVR
         IEnumerator Crumble()
         {
             triggered = true;
-            float d = ExposureSettings.Mode == ExposureMode.Gentle ? delay * 1.8f : (ExposureSettings.Mode == ExposureMode.Brave ? delay * 0.75f : delay);
+            float d = Difficulty.Level == DifficultyLevel.Easy ? delay * 1.8f : (Difficulty.Level == DifficultyLevel.Hard ? delay * 0.75f : delay);
             ProceduralAudio.PlayCrackAt(transform.position);
             Haptics.Light();
             for (float t = 0; t < d; t += Time.deltaTime)

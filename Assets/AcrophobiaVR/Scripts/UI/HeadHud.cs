@@ -27,6 +27,9 @@ namespace AcrophobiaVR
         Image[] livesHearts;
         TMPro.TMP_Text livesLabel;
         Coroutine livesRoutine;
+        int livesMax = 3;
+        CanvasGroup statusGroup;
+        TMPro.TMP_Text status;
 
         public static HeadHud Instance
         {
@@ -65,11 +68,32 @@ namespace AcrophobiaVR
             livesHearts = UIFactory.HeartRow(livesBg.transform, 3, 3, new Vector2(0, 14), 64f);
             livesLabel = UIFactory.Label(livesBg.transform, "", 26, new Vector2(0, -40), new Vector2(340, 36));
             livesGroup.alpha = 0f;
+
+            // Race readout (timer / medal target / lives / stars), shown for the whole run.
+            var statusBg = UIFactory.Panel(root, new Color(0.03f, 0.05f, 0.08f, 0.72f), new Vector2(0, 320), new Vector2(760, 64));
+            statusGroup = statusBg.gameObject.AddComponent<CanvasGroup>();
+            status = UIFactory.Label(statusBg.transform, "", 32, Vector2.zero, new Vector2(740, 60));
+            status.richText = true;
+            statusGroup.alpha = 0f;
+        }
+
+        /// <summary>Sets the always-on race readout (rich text); null hides it.</summary>
+        public void SetStatus(string text)
+        {
+            statusGroup.alpha = string.IsNullOrEmpty(text) ? 0f : 1f;
+            if (!string.IsNullOrEmpty(text)) status.text = text;
         }
 
         /// <summary>Pops up the lives hearts for a moment (after a fall, at level start).</summary>
         public void ShowLives(int lives, int max, string label, float seconds = 2.5f)
         {
+            if (max != livesMax && max > 0)
+            {
+                // Lives depend on the difficulty (2-5): rebuild the heart row to match.
+                foreach (var h in livesHearts) if (h != null) Destroy(h.gameObject);
+                livesHearts = UIFactory.HeartRow(livesGroup.transform, lives, max, new Vector2(0, 14), max > 3 ? 52f : 64f);
+                livesMax = max;
+            }
             UIFactory.SetHearts(livesHearts, lives);
             if (livesRoutine != null) StopCoroutine(livesRoutine);
             livesRoutine = StartCoroutine(ShowFor(livesGroup, livesLabel, label, seconds));

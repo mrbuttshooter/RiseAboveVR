@@ -31,13 +31,17 @@ namespace AcrophobiaVR
             flat.y = 0f;
             if (flat.magnitude > reach || t < -0.2f || t > 1.05f) return;
 
-            bool climb = kb.spaceKey.isPressed || (kb.wKey.isPressed && Vector3.Dot(rig.Head.forward, (onAxis - rig.Head.position).normalized) > -0.2f);
+            // Climb only while facing the ladder (walking away from it - e.g. off the top - never climbs).
+            Vector3 fwd = Vector3.ProjectOnPlane(rig.Head.forward, Vector3.up).normalized;
+            Vector3 toAxis = -flat;
+            bool facing = toAxis.sqrMagnitude < 0.01f || Vector3.Dot(fwd, toAxis.normalized) > 0.4f;
+            bool climb = facing && t < 0.98f && (kb.spaceKey.isPressed || kb.wKey.isPressed);
             DesktopRig.ClimbingThisFrame = climb;
             if (!climb) return;
 
             HeadHud.Instance.ShowProgress(Mathf.Clamp01(t), "Climbing...");
             rig.MoveBy(Vector3.up * climbSpeed * Time.deltaTime);
-            if (t >= 1f && topExit != null) rig.TeleportTo(topExit);
+            if (t + climbSpeed * Time.deltaTime / axis.magnitude >= 0.98f && topExit != null) rig.TeleportTo(topExit);
         }
 
         float stepCooldown;

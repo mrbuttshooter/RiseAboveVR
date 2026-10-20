@@ -105,7 +105,7 @@ namespace AcrophobiaVR
                     Haptics.Medium();
                     Companion.Say(stallLine, stallSeconds);
                     SessionLogger.Log(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, "lift_stall");
-                    float s = ExposureSettings.Mode == ExposureMode.Gentle ? stallSeconds * 0.5f : stallSeconds;
+                    float s = Difficulty.Level == DifficultyLevel.Easy ? stallSeconds * 0.5f : stallSeconds;
                     for (float t = 0; t < s; t += Time.deltaTime)
                     {
                         // The platform shudders a little (the camera stays still).

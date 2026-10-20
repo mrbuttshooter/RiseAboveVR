@@ -24,11 +24,11 @@ namespace AcrophobiaVR
                 var root = c.transform;
                 UIFactory.FullPanel(root, UIFactory.PanelColor);
                 UIFactory.Label(root, GameManager.LevelTitles[levelIndex], 46, new Vector2(0, 80), new Vector2(680, 80), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
-                int stars = ProgressStore.GetStars(levelIndex);
-                string state = unlocked ? "" : "Locked - finish the previous level first";
-                var t = UIFactory.Label(root, state, unlocked ? 64 : 34, new Vector2(0, -10), new Vector2(680, 90));
+                int medal = ProgressStore.GetMedal(levelIndex);
+                string state = unlocked ? "<color=#" + ColorUtility.ToHtmlStringRGB(ProgressStore.MedalColor(medal)) + ">" + (medal > 0 ? ProgressStore.MedalName(medal).ToUpperInvariant() : "NO MEDAL YET") + "</color>"
+                                        : "Locked - finish the previous level first";
+                var t = UIFactory.Label(root, state, unlocked ? 56 : 34, new Vector2(0, -10), new Vector2(680, 90));
                 t.richText = true;
-                if (unlocked) UIFactory.StarRow(root, stars, 3, new Vector2(0, -10), 70f);
                 UIFactory.Label(root, unlocked ? "Walk through the portal to begin" : "", 30, new Vector2(0, -100), new Vector2(680, 60), TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.7f));
             }
         }

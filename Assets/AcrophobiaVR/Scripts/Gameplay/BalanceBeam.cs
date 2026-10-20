@@ -61,10 +61,10 @@ namespace AcrophobiaVR
         {
             get
             {
-                switch (ExposureSettings.Mode)
+                switch (Difficulty.Level)
                 {
-                    case ExposureMode.Gentle: return 0.55f;
-                    case ExposureMode.Brave: return 1.35f;
+                    case DifficultyLevel.Easy: return 0.55f;
+                    case DifficultyLevel.Hard: return 1.35f;
                     default: return 1f;
                 }
             }
@@ -88,7 +88,7 @@ namespace AcrophobiaVR
             float above = head.y - closest.y;
 
             playerOn = t > 0f && t < 1f && above > 0f && above < heightAbove && lateral < walkableHalfWidth + 0.6f;
-            bool active = playerOn && lc.Started && !lc.IsRespawning && !SafeRoom.InSafeRoom;
+            bool active = playerOn && lc.Started && !lc.IsRespawning;
 
             // Wind gusts
             bool gustNow = false;
@@ -118,7 +118,7 @@ namespace AcrophobiaVR
             if (active)
             {
                 // Real heads sway ~10 cm even when standing still, so never make the safe band narrower than 15 cm.
-                float safe = Mathf.Max(0.15f, walkableHalfWidth * (ExposureSettings.Mode == ExposureMode.Gentle ? 0.9f : 0.6f));
+                float safe = Mathf.Max(0.15f, walkableHalfWidth * (Difficulty.Level == DifficultyLevel.Easy ? 0.9f : 0.6f));
                 float fill = 0f;
                 if (lateral > safe) fill += driftFillRate * ModeScale * Mathf.Clamp01((lateral - safe) / walkableHalfWidth + 0.3f);
                 if (gustNow && !lc.IsCrouching) fill += gustFillRate * ModeScale;

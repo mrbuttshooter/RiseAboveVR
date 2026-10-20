@@ -44,8 +44,8 @@ namespace AcrophobiaVR
             var lc = LevelController.Instance;
             if (broken || lc == null || !lc.Started || lc.IsRespawning) return;
 
-            float rate = ExposureSettings.Mode == ExposureMode.Brave ? 1.4f : 1f;
-            float cap = ExposureSettings.Mode == ExposureMode.Gentle ? 0.7f : 1f;
+            float rate = Difficulty.Level == DifficultyLevel.Hard ? 1.4f : 1f;
+            float cap = Difficulty.Level == DifficultyLevel.Easy ? 0.7f : 1f;
             if (PlayerOnTop()) damage = Mathf.Min(cap, damage + Time.deltaTime / secondsToBreak * rate);
 
             int stage = Mathf.FloorToInt(damage * cracks.Length);

@@ -5,7 +5,7 @@ namespace AcrophobiaVR.EditorTools
 {
     public static partial class LevelBuilder
     {
-        // ------------------------------------------------------------------ LEVEL 1: SUNSET CAFE BALCONY (6 m)
+        // ------------------------------------------------------------------ LEVEL 1: ROOFTOP CHASE (11-16 m)
         static void BuildLevel1()
         {
             var scene = NewScene();
@@ -53,7 +53,7 @@ namespace AcrophobiaVR.EditorTools
             // Neighbouring buildings along the street + city behind
             for (int i = -6; i <= 6; i++)
             {
-                if (i == 0) continue;
+                if (i >= 0 && i <= 4) continue; // the cafe and the four rooftop-chase buildings are built by the course
                 float h = 10f + Mathf.Abs(Mathf.Sin(i * 1.7f)) * 18f;
                 Box("StreetBuilding", env, new Vector3(i * 22f, h * 0.5f, 7), new Vector3(20, h, 14), palette[(i + 12) % 4], false);
                 float h2 = 9f + Mathf.Abs(Mathf.Cos(i * 1.3f)) * 22f;
@@ -97,7 +97,6 @@ namespace AcrophobiaVR.EditorTools
             ShowIn(Box("ParapetFrontR", roof, new Vector3(2.15f, RoofY + 0.25f, 0.15f), new Vector3(15.7f, 0.45f, 0.3f), parapetMat), true, false, false);
             ShowIn(Box("ParapetBack", roof, new Vector3(0f, RoofY + 0.55f, 13.85f), new Vector3(20f, 1.0f, 0.3f), parapetMat), true, false, false);
             ShowIn(Box("ParapetSideL", roof, new Vector3(-9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat), true, false, false);
-            ShowIn(Box("ParapetSideR", roof, new Vector3(9.85f, RoofY + 0.55f, 7f), new Vector3(0.3f, 1.0f, 14f), parapetMat), true, false, false);
             Kerb("KerbFront", roof, new Vector3(-10f, RoofY + 0.05f, 0.05f), new Vector3(10f, RoofY + 0.05f, 0.05f), parapetMat);
             Kerb("KerbBack", roof, new Vector3(-10f, RoofY + 0.05f, 13.95f), new Vector3(10f, RoofY + 0.05f, 13.95f), parapetMat);
             Kerb("KerbL", roof, new Vector3(-9.95f, RoofY + 0.05f, 0f), new Vector3(-9.95f, RoofY + 0.05f, 14f), parapetMat);
@@ -159,72 +158,8 @@ namespace AcrophobiaVR.EditorTools
             Box("CafeDoor", balcony, new Vector3(4f, B + 1.1f, 0.02f), new Vector3(1.4f, 2.2f, 0.1f), Mat("DoorWood", new Color(0.35f, 0.2f, 0.12f)), false);
             SignBoard("DoorSign", balcony, new Vector3(4f, B + 2.45f, -0.05f), new Vector2(0.9f, 0.28f), "EXIT", Glow("ExitSignGreen", new Color(0.05f, 0.45f, 0.18f), 0.8f), Color.white, 2f);
 
-            // Glass skywalk extension (left end)
-            var sky = Group("GlassSkywalk", env).transform;
-            var glassRoot = new GameObject("GlassFloor");
-            glassRoot.transform.SetParent(sky, false);
-            glassRoot.transform.localPosition = new Vector3(-5f, B - 0.05f, -5f);
-            var glassCol = glassRoot.AddComponent<BoxCollider>();
-            glassCol.size = new Vector3(2f, 0.1f, 4f);
-            var glassVisual = Box("Panel", glassRoot.transform, Vector3.zero, new Vector3(2f, 0.1f, 4f), floorGlass, false, false);
-            var crack = glassRoot.AddComponent<CrackingGlass>();
-            crack.panel = glassVisual.GetComponent<Renderer>();
-            crack.cracks = Cracks(glassRoot.transform, 8, new Vector2(1f, 2f), 0.056f, 7);
-            crack.secondsToBreak = 10f;
-            Bar("FrameL", sky, new Vector3(-6f, B - 0.1f, -3f), new Vector3(-6f, B - 0.1f, -7f), 0.1f, metal);
-            Bar("FrameR", sky, new Vector3(-4f, B - 0.1f, -3f), new Vector3(-4f, B - 0.1f, -7f), 0.1f, metal);
-            Bar("Strut", sky, new Vector3(-5f, B - 0.1f, -7f), new Vector3(-5f, B - 2.5f, -3.1f), 0.12f, metal);
-            Railing("SkyRailL", sky, new Vector3(-6f, B, -3f), new Vector3(-6f, B, -7f), 1.1f, metal);
-            Railing("SkyRailR", sky, new Vector3(-4f, B, -3f), new Vector3(-4f, B, -7f), 1.1f, metal);
-            Railing("SkyRailEnd", sky, new Vector3(-6f, B, -7f), new Vector3(-4f, B, -7f), 1.1f, metal);
-            SafetyGlass("SkyGlassL", sky, new Vector3(-6f, B, -3f), new Vector3(-6f, B, -7f), 1.05f, glass);
-            SafetyGlass("SkyGlassR", sky, new Vector3(-4f, B, -3f), new Vector3(-4f, B, -7f), 1.05f, glass);
-
-            // Flower pots on a shelf just outside the railing
-            var water = Group("WaterTask", game).AddComponent<WaterObjective>();
-            water.description = "Water the 3 flowers on the ledge";
-            water.companionLineOnComplete = "Beautiful! And you leaned right over the railing to do it.";
-            float[] potX = { -2f, 0.6f, 3.2f };
-            Color[] petals = { new Color(1f, 0.45f, 0.6f), new Color(1f, 0.85f, 0.25f), new Color(0.65f, 0.5f, 1f) };
-            for (int i = 0; i < 3; i++)
-            {
-                Box("Shelf", env, new Vector3(potX[i], B + 0.72f, -3.32f), new Vector3(0.7f, 0.06f, 0.4f), wood);
-                Bar("ShelfBracket", env, new Vector3(potX[i], B + 0.7f, -3.5f), new Vector3(potX[i], B + 0.3f, -3.02f), 0.04f, metal);
-                var pot = Cyl("Pot", game, new Vector3(potX[i], B + 0.75f, -3.32f), 0.15f, 0.26f, Mat("Terracotta", new Color(0.75f, 0.4f, 0.25f)), true, false);
-                // Photo-scanned clay pot as the visual; the cylinder keeps its collider for the watering logic.
-                if (PolyProp("planter_pot_clay", game, new Vector3(potX[i], B + 0.75f, -3.32f), 0f, 1f, 0.28f) != null)
-                    pot.GetComponent<Renderer>().enabled = false;
-                var fp = pot.AddComponent<FlowerPot>();
-                var flower = Group("Flower", game).transform;
-                flower.position = new Vector3(potX[i], B + 1.01f, -3.32f);
-                Cyl("Stem", flower, Vector3.zero, 0.015f, 0.3f, Mat("Stem", new Color(0.3f, 0.6f, 0.25f)), false, false);
-                Sphere("Bloom", flower, new Vector3(0, 0.33f, 0), 0.16f, Mat("Petal" + i, petals[i]), false, false);
-                fp.flower = flower;
-                water.pots.Add(fp);
-            }
-            var can = Group("WateringCan", game);
-            can.transform.position = new Vector3(-0.3f, B + 0.86f, -0.8f);
-            var canBody = Cyl("Body", can.transform, new Vector3(0, -0.12f, 0), 0.1f, 0.22f, Mat("CanGreen", new Color(0.3f, 0.65f, 0.45f), 0.6f, 0.3f), true, false);
-            var spoutBar = Bar("Spout", can.transform, new Vector3(0, -0.02f, 0.08f), new Vector3(0, 0.08f, 0.3f), 0.03f, Mat("CanGreen", new Color(0.3f, 0.65f, 0.45f), 0.6f, 0.3f), false, false);
-            Bar("Handle", can.transform, new Vector3(0, 0.12f, -0.1f), new Vector3(0, 0.12f, 0.06f), 0.025f, metal, false, false);
-            var spout = Point("SpoutTip", can.transform, new Vector3(0, 0.09f, 0.31f));
-            // Photo-scanned metal watering can as the visual (the primitive parts stay as hidden fallbacks).
-            if (PolyProp("watering_can_metal_01", can.transform, new Vector3(0f, -0.12f, 0f), 0f, 1f, 0.3f) != null)
-                foreach (var part in new[] { canBody.transform, spoutBar.transform, can.transform.Find("Handle") })
-                    if (part != null) part.GetComponent<Renderer>().enabled = false;
-            var wc = can.AddComponent<WateringCan>();
-            wc.spout = spout;
-            wc.water = WaterStream(spout);
-            var box = can.AddComponent<BoxCollider>();
-            box.size = new Vector3(0.22f, 0.3f, 0.5f);
-            box.center = new Vector3(0, -0.02f, 0.05f);
-            Object.DestroyImmediate(canBody.GetComponent<Collider>());
-            var canGrab = MakeGrabbable(can, false);
-            canGrab.attachTransform = Point("HandleAttach", can.transform, new Vector3(0f, 0.12f, -0.02f));
-            can.AddComponent<ReturnIfLost>();
-
             // Street sights to spot by looking down
-            var busker = LookTarget("Busker", game, new Vector3(1.5f, 0.16f, -6.5f), 0.5f);
+            var busker = Point("Busker", env, new Vector3(1.5f, 0.16f, -6.5f));
             Person(busker, Vector3.zero, Mat("Jacket", new Color(0.2f, 0.45f, 0.75f)), skin);
             // Between songs: a real acoustic guitar leaning against the busker's leg (box fallback).
             var guitar = Model("Props/Guitar", busker, new Vector3(0.32f, 0f, 0.12f), 1.0f, 75f);
@@ -232,7 +167,7 @@ namespace AcrophobiaVR.EditorTools
             else Box("Guitar", busker, new Vector3(0.25f, 0.9f, -0.2f), new Vector3(0.35f, 0.5f, 0.1f), Mat("GuitarWood", new Color(0.7f, 0.45f, 0.2f)), false, false);
             Cyl("Hat", busker, new Vector3(0.6f, 0, -0.3f), 0.18f, 0.08f, Mat("Felt", new Color(0.2f, 0.2f, 0.2f)), false, false);
 
-            var fountain = LookTarget("Fountain", game, new Vector3(-9f, 0.16f, -18.5f), 1.2f);
+            var fountain = Point("Fountain", env, new Vector3(-9f, 0.16f, -18.5f));
             // Tiered stone fountain (Objaverse / Sketchfab, CC-BY), 3.4 m across; primitive basin as a fallback.
             var fountainModel = Model("Props/Fountain", fountain, Vector3.zero, 1.3f);
             if (fountainModel != null) SolidBounds(fountainModel);
@@ -249,7 +184,7 @@ namespace AcrophobiaVR.EditorTools
             splashMain.playOnAwake = true;
             splashMain.loop = true;
 
-            var dog = LookTarget("Dog", game, new Vector3(8f, 0.16f, -18f), 0.5f);
+            var dog = Point("Dog", env, new Vector3(8f, 0.16f, -18f));
             // Gemini-made model; primitive fallback if the file is missing.
             // Realistic scanned/sculpted animals (Objaverse / Sketchfab, CC-BY - see Models/Animals/CREDITS.txt) first.
             if (Model("Animals/Biscuit", dog, Vector3.zero, 0.62f) == null && Model("Biscuit", dog, Vector3.zero, 0.6f) == null)
@@ -264,132 +199,6 @@ namespace AcrophobiaVR.EditorTools
             var walk = dog.gameObject.AddComponent<LoopMover>();
             walk.points = new[] { new Vector3(4f, 0.16f, -18f), new Vector3(14f, 0.16f, -18f), new Vector3(14f, 0.16f, -19.5f), new Vector3(4f, 0.16f, -19.5f) };
             walk.speed = 1.2f;
-
-            LookDownObjective Look(string desc, Transform target, string label)
-            {
-                var o = Group("Spot " + target.name, game).AddComponent<LookDownObjective>();
-                o.description = desc;
-                o.target = target;
-                o.spotLabel = label;
-                return o;
-            }
-            var lookBusker = Look("Look down: find the street musician", busker, "Listening to the busker...");
-            var lookFountain = Look("Look down: find the fountain", fountain, "Watching the fountain...");
-            var lookDog = Look("Look down: spot the dog on a walk", dog, "Following the dog...");
-            lookDog.companionLineOnComplete = "Good boy! You looked straight down - huge step.";
-
-            var reach = Zone<ReachObjective>("SkywalkEnd", game, new Vector3(-5f, B + 1.2f, -6.3f), new Vector3(2f, 2.4f, 1.2f));
-            reach.description = "Walk to the end of the glass skywalk";
-            reach.companionLineOnComplete = "You're standing on glass, six metres up. Look down - that's courage!";
-            Zone<SayZone>("SkywalkHint", game, new Vector3(-5f, B + 1.2f, -2.2f), new Vector3(2.4f, 2.4f, 1.2f)).line =
-                "The glass skywalk! It's strong, but it creaks. Keep walking, don't stop on it too long.";
-
-            Star(game, new Vector3(-5f, B + 1.25f, -7.4f));
-            Star(game, new Vector3(4.3f, B + 1.2f, -3.45f));
-            Star(game, new Vector3(5.4f, B + 1.0f, -1.6f));
-
-            // ---- The window ledge: rescue Kiwi the parrot (narrow, 35 cm, street 6 m below)
-            const float RoofTop = 13.05f;
-            var ledgeRoot = Group("WindowLedge", game).transform;
-            // A chunk of the ledge has crumbled away: a 35 cm gap you step over with the street right below.
-            var ledgeStone = Mat("Stone", new Color(0.75f, 0.75f, 0.78f));
-            BoxMinMax("Ledge", ledgeRoot, new Vector3(4.95f, B - 0.12f, -0.4f), new Vector3(7.25f, B, 0f), ledgeStone, true, false);
-            BoxMinMax("Ledge2", ledgeRoot, new Vector3(7.6f, B - 0.12f, -0.4f), new Vector3(10.2f, B, 0f), ledgeStone, true, false);
-            BoxMinMax("LedgeRubble", ledgeRoot, new Vector3(7.25f, B - 0.12f, -0.12f), new Vector3(7.6f, B - 0.07f, 0f), ledgeStone, false, false);
-            Zone<SayZone>("GapHint", game, new Vector3(6.6f, B + 1.2f, -0.25f), new Vector3(0.6f, 2.4f, 0.8f)).line =
-                "Part of the ledge has crumbled away! Step over the gap - long stride, don't look down... or do.";
-            // Pigeons roost on the far half of the ledge - they burst out when you get close.
-            var pigeons = Group("Pigeons", game);
-            pigeons.transform.position = new Vector3(8.6f, B + 0.02f, -0.18f);
-            pigeons.transform.rotation = Quaternion.Euler(0, -90, 0);
-            var startle = pigeons.AddComponent<StartleBirds>();
-            startle.fleeDirection = new Vector3(0.4f, 0f, -1f);
-            startle.bodyMaterial = Mat("PigeonGrey", new Color(0.55f, 0.57f, 0.62f), 0.35f);
-            startle.wingMaterial = Mat("PigeonWing", new Color(0.42f, 0.44f, 0.5f), 0.3f);
-            startle.birdPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Animals/Pigeon.fbx")
-                ?? UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(ModelFolder + "Pigeon.fbx");
-            var ledgeBeam = ledgeRoot.gameObject.AddComponent<BalanceBeam>();
-            ledgeBeam.start = Point("Start", ledgeRoot, new Vector3(5.0f, B, -0.2f));
-            ledgeBeam.end = Point("End", ledgeRoot, new Vector3(10.0f, B, -0.2f));
-            ledgeBeam.walkableHalfWidth = 0.2f;
-            ledgeBeam.driftFillRate = 0.5f;
-            var ledgeRail = Bar("LedgeHandrail", ledgeRoot, new Vector3(5.0f, B + 1.0f, -0.06f), new Vector3(10.0f, B + 1.0f, -0.06f), 0.04f, metal, true, false);
-            ShowIn(ledgeRail, true, false, false);
-            Zone<SayZone>("LedgeHint", game, new Vector3(4.3f, B + 1.2f, -0.5f), new Vector3(1.2f, 2.4f, 1f)).line =
-                "Kiwi the parrot escaped onto the window ledge! Face the wall, side-step slowly and keep your body close to the building.";
-
-            var parrot = Group("Kiwi (Parrot)", game);
-            parrot.transform.position = new Vector3(9.6f, B + 0.02f, -0.2f);
-            parrot.transform.rotation = Quaternion.Euler(0, -90, 0);
-            // Gemini-made model (Assets/AcrophobiaVR/Models/Kiwi.fbx); primitive fallback if it is missing.
-            if (Model("Animals/Kiwi", parrot.transform, Vector3.zero, 0.42f) == null && Model("Kiwi", parrot.transform, Vector3.zero, 0.42f) == null)
-            {
-                var feathers = Mat("ParrotGreen", new Color(0.2f, 0.75f, 0.3f), 0.5f);
-                Prim(PrimitiveType.Capsule, "Body", parrot.transform, new Vector3(0, 0.2f, 0), new Vector3(0.16f, 0.16f, 0.16f), feathers, false, false);
-                Sphere("Head", parrot.transform, new Vector3(0, 0.38f, 0.04f), 0.13f, Mat("ParrotRed", new Color(0.9f, 0.2f, 0.15f), 0.5f), false, false);
-                Prim(PrimitiveType.Cube, "Beak", parrot.transform, new Vector3(0, 0.37f, 0.12f), new Vector3(0.04f, 0.05f, 0.07f), Mat("PipBeak", new Color(1f, 0.7f, 0.2f)), false, false);
-                Bar("Tail", parrot.transform, new Vector3(0, 0.12f, -0.06f), new Vector3(0, 0.02f, -0.3f), 0.05f, Mat("ParrotBlue", new Color(0.2f, 0.35f, 0.9f), 0.5f), false, false);
-            }
-            var parrotCol = parrot.AddComponent<BoxCollider>();
-            parrotCol.size = new Vector3(0.25f, 0.5f, 0.45f);
-            parrotCol.center = new Vector3(0, 0.22f, 0);
-            MakeGrabbable(parrot, true);
-            var kiwi = parrot.AddComponent<Collectible>();
-            kiwi.displayName = "Kiwi the parrot";
-            kiwi.isBird = true;
-            var rescue = Group("RescueParrot", game).AddComponent<CollectObjective>();
-            rescue.description = "Rescue Kiwi the parrot from the window ledge";
-            rescue.companionLineOnComplete = "Got her! Kiwi is safe - and you walked a ledge as wide as a shoebox.";
-            rescue.items.Add(kiwi);
-
-            // ---- Fire escape: climb the ladder to the roof terrace (13 m)
-            var ladderGo = Group("FireEscapeLadder", game);
-            var ladder = ladderGo.AddComponent<Ladder>();
-            AddClimbRungs(ladderGo.transform, new Vector3(-6.3f, B, -0.15f), new Vector3(-6.3f, RoofTop + 1.2f, -0.15f), 0.6f, metal);
-            ladder.bottom = Point("Bottom", ladderGo.transform, new Vector3(-6.3f, B, -0.15f));
-            ladder.top = Point("Top", ladderGo.transform, new Vector3(-6.3f, RoofTop, -0.15f));
-            ladder.topExit = Point("TopExit", ladderGo.transform, new Vector3(-6.3f, RoofTop, 1.3f), 0f);
-            Zone<SayZone>("LadderHint", game, new Vector3(-6.3f, B + 1.2f, -0.7f), new Vector3(1.4f, 2.4f, 1f)).line =
-                "The fire-escape ladder goes all the way to the roof. Hand over hand - and don't look down... unless you want to!";
-            var climbRoof = Zone<ReachObjective>("ReachRoof", game, new Vector3(-6.3f, RoofTop + 1.2f, 2.0f), new Vector3(3f, 2.4f, 3f));
-            climbRoof.description = "Climb the fire-escape ladder to the roof (13 m)";
-            climbRoof.companionLineOnComplete = "Thirteen metres - more than double where we started. Look at that view!";
-            var cpRoof = Zone<CheckpointZone>("CP Roof", game, new Vector3(-4f, RoofTop + 1.2f, 3f), new Vector3(8f, 2.4f, 5f));
-            cpRoof.label = "Roof terrace (13 m)";
-            cpRoof.respawnPoint = Point("CP Roof Spawn", game, new Vector3(-5f, RoofTop, 2.5f), 180f);
-            // Wind on the roof: gusts shove you towards the street. Crouch to hold on.
-            var roofWind = Group("RoofWind", game).AddComponent<GustZone>();
-            // Covers the roof right up to the street edge, except the strip by the ladder where you arrive.
-            roofWind.transform.position = new Vector3(2.75f, RoofTop + 1.5f, 6.5f);
-            roofWind.size = new Vector3(14.5f, 4f, 13f);
-            roofWind.pushDirection = new Vector3(0f, 0f, -1f);
-            roofWind.interval = new Vector2(8f, 13f);
-            roofWind.pushSpeed = 1.1f;
-
-            // ---- Rooftop bell: the finale
-            // A small bell frame (two posts and a beam) so the bell is visible from every side and swings from its pivot.
-            Bar("BellPostL", game, new Vector3(6.05f, RoofTop, 2.3f), new Vector3(6.05f, RoofTop + 1.95f, 2.3f), 0.07f, metal, true, false);
-            Bar("BellPostR", game, new Vector3(6.95f, RoofTop, 2.3f), new Vector3(6.95f, RoofTop + 1.95f, 2.3f), 0.07f, metal, true, false);
-            Bar("BellBeam", game, new Vector3(6.0f, RoofTop + 1.95f, 2.3f), new Vector3(7.0f, RoofTop + 1.95f, 2.3f), 0.09f, metal, true, false);
-            var bell = Group("Bell", game);
-            bell.transform.position = new Vector3(6.5f, RoofTop + 1.9f, 2.3f); // pivot under the beam
-            var brass = Mat("BellBrass", new Color(0.85f, 0.65f, 0.25f), 0.85f, 0.9f);
-            Bar("BellHanger", bell.transform, Vector3.zero, new Vector3(0f, -0.14f, 0f), 0.04f, metal, false, false);
-            Sphere("BellDome", bell.transform, new Vector3(0f, -0.26f, 0f), 0.3f, brass, false, false);
-            Cyl("BellBody", bell.transform, new Vector3(0f, -0.62f, 0f), 0.19f, 0.36f, brass, true, false);
-            Cyl("BellLip", bell.transform, new Vector3(0f, -0.66f, 0f), 0.23f, 0.06f, brass, false, false);
-            Sphere("Clapper", bell.transform, new Vector3(0f, -0.7f, 0f), 0.09f, metal, false, false);
-            var bellButton = bell.AddComponent<PressButton>();
-            bellButton.hint = "Ring the bell!";
-            bellButton.bell = true;
-            bell.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
-            var ring = Group("RingBell", game).AddComponent<PressObjective>();
-            ring.description = "Ring the bell on the rooftop";
-            ring.button = bellButton;
-            Zone<GoalZone>("Goal (Rooftop Bell)", game, new Vector3(6.5f, RoofTop + 1.2f, 2.5f), new Vector3(3.5f, 2.4f, 3.5f));
-
-            Star(game, new Vector3(10.35f, B + 1.1f, -0.55f));
-            Star(game, new Vector3(-9.4f, RoofTop + 1.3f, -0.05f)); // lean over the roof parapet
 
             // Photo-scanned street dressing (CC0 Poly Haven).
             var dress = Group("ScanDressing", env).transform;
@@ -413,16 +222,15 @@ namespace AcrophobiaVR.EditorTools
             // A potted money tree in the balcony corner.
             PolyProp("pachira_aquatica_01", dress, new Vector3(-6.45f, B, -0.45f), 30f, 1f, 1.6f);
 
-            var lc = CommonLevel(0, "Level 1 - The Cafe", new Vector3(0f, B, -1.6f), 180f, 0f, 30f, 0.6f);
-            lc.objectives = new Objective[] { water, lookBusker, lookFountain, lookDog, reach, rescue, climbRoof, ring };
-            lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(-2.2f, B + 1.75f, -0.06f), new Vector3(-2.2f, B + 1.6f, -2f));
+            var chase = BuildRooftopChase(env, game, palette, metal, out var lc);
+            lc.objectives = new Objective[] { chase };
+            lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(-8.6f, 14.7f, 3.6f), new Vector3(-7f, 14.6f, 7f));
             lc.introLines = new[]
             {
-                "Welcome to the Sunset Cafe! We start on the balcony, six metres up - and we'll finish on the roof at thirteen.",
-                "Kiwi, the cafe's parrot, has escaped onto the window ledge. We'll need your help to get her back.",
-                "No railings out here, and you've got three lives. Your tasks are on the board behind you - press Esc or X to pause.",
+                "Kiwi got out! She's on the roof edge - and she's fast.",
+                "Chase her across the rooftops. Jump the gaps, don't stop on anything that creaks.",
             };
-            lc.finishLine = "Ding ding! Level one complete - a ledge, a ladder and a rooftop. That was brave!";
+            lc.finishLine = "Got her! Kiwi's caught. Now do it faster.";
             Save(scene, GameManager.LevelScenes[0]);
         }
 

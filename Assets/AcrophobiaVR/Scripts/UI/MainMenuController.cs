@@ -4,8 +4,8 @@ using UnityEngine.UI;
 namespace AcrophobiaVR
 {
     /// <summary>
-    /// The park hub: title, level cards (play / locked / stars / best time), exposure mode picker,
-    /// trophy wall with the anxiety graph, and help. Walking through the portals also starts levels.
+    /// The hub: title, level cards (play / locked / medal / best time / best score), difficulty picker,
+    /// a records wall (medals + achievements), and help. Walking through the portals also starts levels.
     /// Text is deliberately large and short so it stays readable in a headset and on a laptop screen.
     /// </summary>
     public class MainMenuController : MonoBehaviour
@@ -26,18 +26,18 @@ namespace AcrophobiaVR
         {
             AmbientAudio.SetMeadow(false);
             BuildMenu();
-            if (trophyPoint != null) AnxietyGraph.Create(trophyPoint);
+            if (trophyPoint != null) BuildRecords();
             if (helpPoint != null) BuildHelp();
             Invoke(nameof(Welcome), 1.5f);
         }
 
         void Welcome()
         {
-            int total = ProgressStore.TotalStars();
+            int total = ProgressStore.TotalMedals();
             if (total == 0)
-                Companion.Say("Hi, I'm Pip! I'll be with you the whole way up. Start with Level 1 - we go higher step by step.", 7f);
+                Companion.Say("I'm Pip, your race drone. Three courses, one clock, no railings. Think you can keep up?", 6f);
             else
-                Companion.Say("Welcome back! You have " + total + " of 9 stars. Ready to rise a little higher?", 5f);
+                Companion.Say("Back for more? " + total + " of 9 medal points so far. Gold on Hard or it does not count!", 5f);
         }
 
         void BuildMenu()
@@ -48,22 +48,17 @@ namespace AcrophobiaVR
             var root = canvas.transform;
             UIFactory.FullPanel(root, new Color(0.06f, 0.1f, 0.16f, 0.95f));
             UIFactory.Label(root, "RISE ABOVE", 130, new Vector2(0, 470), new Vector2(1650, 150), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
-            UIFactory.Label(root, "A sky-high adventure - no railings, three lives", 46, new Vector2(0, 375), new Vector2(1650, 64), TextAnchor.MiddleCenter, Dim);
-            // Top-right, clear of the ~900 px wide centred title text.
-            UIFactory.Button(root, "My Progress", new Vector2(640, 470), new Vector2(300, 80), UIFactory.Accent * 0.75f, ProgressReport.Show, 36);
-            // Optional research feature: a 0-10 anxiety rating before and after each level (off = straight into the action).
-            trackButton = UIFactory.Button(root, "", new Vector2(-640, 470), new Vector2(300, 80), UIFactory.ButtonColor, ToggleTracking, 30);
-            RefreshTracking();
+            UIFactory.Label(root, "Run. Jump. Don't fall. Beat the clock.", 46, new Vector2(0, 375), new Vector2(1650, 64), TextAnchor.MiddleCenter, Dim);
 
             for (int i = 0; i < GameManager.LevelScenes.Length; i++)
                 BuildLevelCard(root, i, new Vector2((i - 1) * 555, 70));
 
             UIFactory.Label(root, "Difficulty:", 46, new Vector2(-670, -300), new Vector2(300, 70), TextAnchor.MiddleLeft, UIFactory.Accent, FontStyle.Bold);
-            string[] names = { ExposureSettings.DisplayName(ExposureMode.Gentle), ExposureSettings.DisplayName(ExposureMode.Standard), ExposureSettings.DisplayName(ExposureMode.Brave) };
+            string[] names = { Difficulty.DisplayName(DifficultyLevel.Easy), Difficulty.DisplayName(DifficultyLevel.Normal), Difficulty.DisplayName(DifficultyLevel.Hard) };
             for (int m = 0; m < 3; m++)
             {
                 int mode = m;
-                modeButtons[m] = UIFactory.Button(root, names[m], new Vector2(-330 + m * 250, -300), new Vector2(235, 92), UIFactory.ButtonColor, () => SetMode((ExposureMode)mode), 42);
+                modeButtons[m] = UIFactory.Button(root, names[m], new Vector2(-330 + m * 250, -300), new Vector2(235, 92), UIFactory.ButtonColor, () => SetMode((DifficultyLevel)mode), 42);
             }
             modeText = UIFactory.Label(root, "", 36, new Vector2(-200, -395), new Vector2(1200, 60), TextAnchor.MiddleLeft, Dim);
             RefreshMode();
@@ -81,7 +76,7 @@ namespace AcrophobiaVR
             UIFactory.Button(root, "+", new Vector2(752, -395), new Vector2(70, 70), UIFactory.ButtonColor, () => ChangeVolume(0.1f), 44);
             RefreshVolume();
 
-            UIFactory.Label(root, "In a level:  Esc / X = pause menu     C / crouch = hold on in the wind     H = heart rate", 34, new Vector2(0, -490), new Vector2(1650, 56), TextAnchor.MiddleCenter, UIFactory.Calm);
+            UIFactory.Label(root, "In a level:  A / Space = jump     crouch = hold on in the wind     Esc / X = pause", 34, new Vector2(0, -490), new Vector2(1650, 56), TextAnchor.MiddleCenter, UIFactory.Calm);
         }
 
         void BuildLevelCard(Transform root, int i, Vector2 pos)
@@ -89,53 +84,58 @@ namespace AcrophobiaVR
             bool unlocked = GameManager.Instance.IsUnlocked(i);
             var card = UIFactory.Panel(root, unlocked ? new Color(0.13f, 0.23f, 0.35f, 1f) : new Color(0.13f, 0.13f, 0.16f, 1f), pos, new Vector2(525, 520));
             var t = card.transform;
-            string[] names = { "The Cafe", "Construction Site", "The Skyscraper" };
-            string[] heights = { "6-13 m", "25 m", "150 m" };
+            string[] names = { "Rooftop Chase", "Crane Rush", "Skyline Gauntlet" };
+            string[] heights = { "11-16 m", "6-28 m", "139-150 m" };
             UIFactory.Label(t, "LEVEL " + (i + 1), 38, new Vector2(0, 205), new Vector2(500, 56), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
             UIFactory.Label(t, names[i], 50, new Vector2(0, 145), new Vector2(510, 70), TextAnchor.MiddleCenter, Color.white, FontStyle.Bold);
-            UIFactory.Label(t, heights[i] + " high", 44, new Vector2(0, 80), new Vector2(500, 60), TextAnchor.MiddleCenter, UIFactory.Warn, FontStyle.Bold);
-            UIFactory.Label(t, GameManager.LevelDescriptions[i], 32, new Vector2(0, 0), new Vector2(480, 100), TextAnchor.MiddleCenter, Dim);
-            UIFactory.StarRow(t, ProgressStore.GetStars(i), 3, new Vector2(0, -85), 58f);
+            UIFactory.Label(t, heights[i] + " high", 40, new Vector2(0, 88), new Vector2(500, 52), TextAnchor.MiddleCenter, UIFactory.Warn, FontStyle.Bold);
+            UIFactory.Label(t, GameManager.LevelDescriptions[i], 28, new Vector2(0, 8), new Vector2(480, 112), TextAnchor.MiddleCenter, Dim);
+            int medal = ProgressStore.GetMedal(i);
+            UIFactory.Label(t, medal > 0 ? ProgressStore.MedalName(medal).ToUpperInvariant() + " MEDAL" : "No medal yet", 40, new Vector2(0, -85), new Vector2(500, 56),
+                TextAnchor.MiddleCenter, ProgressStore.MedalColor(medal), FontStyle.Bold);
             float best = ProgressStore.GetBestTime(i);
-            int bestScore = PlayerPrefs.GetInt("acro_best_score_" + i, 0);
-            UIFactory.Label(t, best > 0 ? "Best " + LevelController.FormatTime(best) + (bestScore > 0 ? "   " + bestScore.ToString("N0") + " pts" : "") : " ", 30, new Vector2(0, -140), new Vector2(500, 44), TextAnchor.MiddleCenter, Dim);
+            int bestScore = ProgressStore.GetBestScore(i);
+            UIFactory.Label(t, best > 0 ? "Best " + LevelController.FormatTime(best, true) + (bestScore > 0 ? "   " + bestScore.ToString("N0") + " pts" : "") : " ", 30, new Vector2(0, -140), new Vector2(500, 44), TextAnchor.MiddleCenter, Dim);
             var b = UIFactory.Button(t, unlocked ? "PLAY" : "LOCKED", new Vector2(0, -205), new Vector2(320, 90),
                 unlocked ? UIFactory.Calm * 0.8f : new Color(0.32f, 0.32f, 0.32f), unlocked ? () => GameManager.Instance.LoadLevel(i) : (UnityEngine.Events.UnityAction)null, 46);
             b.interactable = unlocked;
         }
 
-        UnityEngine.UI.Button trackButton;
-
-        void ToggleTracking()
+        void BuildRecords()
         {
-            ExposureSettings.TrackAnxiety = !ExposureSettings.TrackAnxiety;
-            RefreshTracking();
-            Companion.Say(ExposureSettings.TrackAnxiety
-                ? "Anxiety log on: you'll rate how you feel (0-10) before and after each level - it shows up in My Progress."
-                : "Anxiety log off: levels start straight away with a countdown.", 4f);
+            var canvas = UIFactory.CreateWorldCanvas("Records", new Vector2(1000, 1000), 0.0015f);
+            canvas.transform.SetPositionAndRotation(trophyPoint.position, trophyPoint.rotation);
+            var root = canvas.transform;
+            UIFactory.FullPanel(root, new Color(0.06f, 0.1f, 0.16f, 0.95f));
+            UIFactory.Label(root, "RECORDS", 64, new Vector2(0, 430), new Vector2(950, 90), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < GameManager.LevelScenes.Length; i++)
+            {
+                int m = ProgressStore.GetMedal(i);
+                float best = ProgressStore.GetBestTime(i);
+                sb.Append("<b>" + GameManager.LevelTitles[i] + "</b>\n<color=#" + ColorUtility.ToHtmlStringRGB(ProgressStore.MedalColor(m)) + ">" +
+                          ProgressStore.MedalName(m) + "</color>" + (best > 0f ? "   " + LevelController.FormatTime(best, true) : "") + "\n\n");
+            }
+            sb.Append("<b><color=#FFD84D>Achievements " + Achievements.UnlockedCount + " / " + Achievements.All.Length + "</color></b>\n");
+            foreach (var a in Achievements.All)
+                sb.Append(Achievements.IsUnlocked(a.id) ? "<color=#8FE3B0>\u2714 " + a.title + "</color>\n" : "<color=#777777>\u2022 " + a.title + "</color>\n");
+            var body = UIFactory.Label(root, sb.ToString(), 32, new Vector2(0, -50), new Vector2(920, 820), TextAnchor.UpperLeft);
+            body.richText = true;
         }
 
-        void RefreshTracking()
+        void SetMode(DifficultyLevel mode)
         {
-            if (trackButton == null) return;
-            var label = trackButton.GetComponentInChildren<TMPro.TMP_Text>();
-            if (label != null) label.text = ExposureSettings.TrackAnxiety ? "Anxiety log: ON" : "Anxiety log: OFF";
-            trackButton.GetComponent<Image>().color = ExposureSettings.TrackAnxiety ? UIFactory.Calm * 0.75f : UIFactory.ButtonColor;
-        }
-
-        void SetMode(ExposureMode mode)
-        {
-            ExposureSettings.Mode = mode;
+            Difficulty.Level = mode;
             RefreshMode();
-            Companion.Say(ExposureSettings.Describe(mode), 4f);
+            Companion.Say(Difficulty.Describe(mode), 4f);
         }
 
         void RefreshMode()
         {
-            var mode = ExposureSettings.Mode;
+            var mode = Difficulty.Level;
             for (int m = 0; m < 3; m++)
                 modeButtons[m].GetComponent<Image>().color = m == (int)mode ? UIFactory.Calm * 0.85f : UIFactory.ButtonColor;
-            modeText.text = ExposureSettings.Describe(mode);
+            modeText.text = Difficulty.Describe(mode);
         }
 
         // UIFactory.Button already plays ProceduralAudio.PlayClick on press, so no extra click here.
@@ -155,7 +155,7 @@ namespace AcrophobiaVR
 
         void ConfirmReset()
         {
-            Dialog.Show("Reset progress?", "This locks levels 2 and 3 again and clears stars and the anxiety history.\n(The CSV session log is kept.)",
+            Dialog.Show("Reset progress?", "This locks levels 2 and 3 again and clears medals, best times and achievements.",
                 new Dialog.Choice("Reset", () =>
                 {
                     GameManager.Instance.ResetProgress();
@@ -175,16 +175,16 @@ namespace AcrophobiaVR
             UIFactory.Label(root, "HOW TO PLAY", 64, new Vector2(0, 430), new Vector2(950, 90), TextAnchor.MiddleCenter, UIFactory.Accent, FontStyle.Bold);
             var body = UIFactory.Label(root,
                 "<b><color=#5CC8FA>VR</color></b>\n" +
-                "Left stick - walk\n" +
-                "Right stick - turn / teleport\n" +
-                "Grip - grab, climb\n" +
-                "Trigger - press buttons\n" +
-                "Wind gust? Crouch down!\n\n" +
+                "Left stick - run,  Right stick - turn\n" +
+                "A - jump (no teleporting!)\n" +
+                "Grip - grab, climb, zipline\n" +
+                "Gust warning? Crouch!\n\n" +
                 "<b><color=#5CC8FA>Keyboard + mouse</color></b>\n" +
-                "WASD - walk,  Mouse - look\n" +
-                "Click - use / grab\n" +
-                "C - crouch,  Space - climb\n\n" +
-                "<b><color=#FFD84D>Stars:</color></b> finish + no slips + all courage stars",
+                "WASD - run,  Shift - sprint\n" +
+                "Space - jump / climb,  C - crouch\n" +
+                "Click - use / grab\n\n" +
+                "<b><color=#FFD84D>Medals:</color></b> beat the gold / silver / bronze time.\n" +
+                "Falls cost lives; time up = game over.",
                 38, new Vector2(0, -50), new Vector2(920, 820), TextAnchor.UpperLeft);
             body.richText = true;
         }

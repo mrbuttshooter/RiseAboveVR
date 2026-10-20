@@ -9,15 +9,16 @@ namespace AcrophobiaVR
 {
     /// <summary>
     /// Keyboard + mouse fallback when no headset is connected, so the whole game can be played and
-    /// demonstrated on a normal PC. WASD move, mouse look, Shift walk slowly, C crouch,
-    /// left click use/grab, right click pour, Space climb, Esc Calm Meadow, Tab free the cursor.
+    /// demonstrated on a normal PC. WASD run, Shift sprint, Space jump (climbs on ladders), C crouch,
+    /// left click use/grab, right click pour, Esc pause, Tab free the cursor.
     /// </summary>
     [RequireComponent(typeof(XROrigin))]
     public class DesktopRig : MonoBehaviour
     {
         public static bool ClimbingThisFrame;
 
-        public float walkSpeed = 2.2f;
+        public float walkSpeed = PlayerRig.RunSpeed;
+        public float sprintSpeed = 4.6f;
         public float mouseSensitivity = 0.12f;
         public float standingHeight = 1.65f;
         public float crouchHeight = 1.05f;
@@ -29,6 +30,8 @@ namespace AcrophobiaVR
         float pitch;
         float yaw;
         float verticalVelocity;
+        float lastGroundedTime = -1f;
+        float jumpPressedTime = -1f;
         float currentHeight;
         bool active;
         TMPro.TMP_Text crosshairHint;
@@ -36,6 +39,18 @@ namespace AcrophobiaVR
         bool cursorFree;
         bool manualFree;
         bool wasUiOpen;
+
+        /// <summary>Turns the desktop view (used when a rotating platform carries the player).</summary>
+        public void AddYaw(float degrees) => yaw += degrees;
+
+        /// <summary>Faces the desktop view along a direction (teleports, respawns, ladder exits).</summary>
+        public void FaceDirection(Vector3 forward)
+        {
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 1e-4f) return;
+            yaw = Quaternion.LookRotation(forward).eulerAngles.y;
+            pitch = 0f;
+        }
 
         IEnumerator Start()
         {
@@ -88,7 +103,7 @@ namespace AcrophobiaVR
             yaw = transform.eulerAngles.y;
             BuildCrosshair();
             SetCursorFree(false);
-            HeadHud.Instance.ShowMessage("Desktop mode: WASD move, mouse look, click to use, C crouch, Space climb, Esc Calm Meadow", 7f);
+            HeadHud.Instance.ShowMessage("Desktop: WASD run, Shift sprint, Space jump / climb, C crouch, click to use, Esc pause", 7f);
         }
 
         void BuildCrosshair()
@@ -119,7 +134,7 @@ namespace AcrophobiaVR
             if (kb == null || mouse == null) return;
 
             // Free the mouse whenever a menu/rating panel is open so it can be clicked.
-            bool uiOpen = Dialog.AnyOpen || FindFirstObjectByType<RatingPanel>() != null || (BreathingGuide.Active && !SafeRoom.InSafeRoom) || SafeRoom.InSafeRoom || MainMenuController.MenuOpen;
+            bool uiOpen = Dialog.AnyOpen || MainMenuController.MenuOpen;
             if (kb.tabKey.wasPressedThisFrame) manualFree = !manualFree;
             // A panel just appeared at eye level: level the view so the player actually sees it.
             if (uiOpen && !wasUiOpen) pitch = 0f;
@@ -153,12 +168,24 @@ namespace AcrophobiaVR
                 if (kb.sKey.isPressed) input.y -= 1;
                 if (kb.dKey.isPressed) input.x += 1;
                 if (kb.aKey.isPressed) input.x -= 1;
-                float speed = kb.leftShiftKey.isPressed ? walkSpeed * 0.45f : walkSpeed;
+                float speed = kb.leftShiftKey.isPressed ? sprintSpeed : walkSpeed;
                 if (targetHeight < standingHeight) speed *= 0.5f;
                 Vector3 move = (transform.forward * input.y + transform.right * input.x).normalized * speed;
 
+                // isGrounded flickers on moving platforms (they move the player each frame): also trust a ground probe.
+                bool grounded = cc.isGrounded || (verticalVelocity <= 0.5f && PlayerRig.Instance != null && PlayerRig.Instance.GroundCollider() != null);
+                if (grounded) lastGroundedTime = Time.time;
+                if (kb.spaceKey.wasPressedThisFrame) jumpPressedTime = Time.time;
                 if (ClimbingThisFrame) verticalVelocity = 0f;
-                else if (cc.isGrounded) verticalVelocity = -1f;
+                else if (Time.time - jumpPressedTime < 0.12f && Time.time - lastGroundedTime < 0.12f && verticalVelocity <= 0f)
+                {
+                    // Jump (with a little coyote time and input buffering so edge jumps feel fair).
+                    verticalVelocity = Mathf.Sqrt(2f * -Physics.gravity.y * PlayerRig.JumpHeight);
+                    jumpPressedTime = -1f;
+                    lastGroundedTime = -1f;
+                    ProceduralAudio.PlayWhoosh(0.25f);
+                }
+                else if (grounded && verticalVelocity < 0f) verticalVelocity = -1f;
                 else verticalVelocity += Physics.gravity.y * Time.deltaTime;
                 if (!ClimbingThisFrame) move.y = verticalVelocity;
                 cc.Move(move * Time.deltaTime);

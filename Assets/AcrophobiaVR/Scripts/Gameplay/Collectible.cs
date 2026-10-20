@@ -49,7 +49,7 @@ namespace AcrophobiaVR
             if (isCat) ProceduralAudio.PlayMeowAt(transform.position);
             else if (isBird) ProceduralAudio.PlayChirpAt(transform.position);
             else ProceduralAudio.PlayChime(1.4f);
-            if (isCat) Achievements.Unlock("cat_rescuer");
+            if (isCat) Achievements.Unlock("kiwi_caught");
             if (Owner != null) Owner.NotifyCollected(this);
             StartCoroutine(Vanish());
         }

@@ -123,7 +123,7 @@ namespace AcrophobiaVR.EditorTools
             RenderSettings.fogDensity = 0.0022f;
         }
 
-        /// <summary>Common objects for every level: rig, controller, Pip, audio, effects, Calm Meadow.</summary>
+        /// <summary>Common objects for every level: rig, controller, fall guard, Pip, audio, effects.</summary>
         static LevelController CommonLevel(int index, string title, Vector3 start, float startYaw, float groundY, float maxHeight, float cityAudio)
         {
             var systems = Group("Systems").transform;
@@ -147,52 +147,7 @@ namespace AcrophobiaVR.EditorTools
 
             InstantiateRig(start, startYaw);
             CreatePip(start + Quaternion.Euler(0, startYaw, 0) * new Vector3(0.6f, 1.5f, 1f));
-            BuildCalmMeadow(new Vector3(3000f, 0f, 3000f));
             return lc;
-        }
-
-        /// <summary>The safe place: a sunny meadow ringed by hedges, with a pond, trees, fireflies and the breathing orb.</summary>
-        static void BuildCalmMeadow(Vector3 c)
-        {
-            var root = Group("Calm Meadow (Safe Room)").transform;
-            root.position = c;
-            var grass = Mat("MeadowGrass", new Color(0.42f, 0.7f, 0.35f));
-            var hedge = Mat("Hedge", new Color(0.2f, 0.45f, 0.22f));
-            var trunk = Mat("Trunk", new Color(0.4f, 0.28f, 0.18f));
-            var leaves = Mat("Leaves", new Color(0.35f, 0.62f, 0.3f));
-            var water = Mat("Pond", new Color(0.35f, 0.65f, 0.85f), 0.95f);
-            Cyl("Ground", root, new Vector3(0, -0.5f, 0), 28f, 0.5f, grass);
-            for (int i = 0; i < 36; i++)
-            {
-                float a = i / 36f * Mathf.PI * 2f;
-                Cyl("Hedge", root, new Vector3(Mathf.Cos(a) * 24f, 0, Mathf.Sin(a) * 24f), 2.6f, 5f, hedge);
-            }
-            Cyl("Pond", root, new Vector3(-6, 0.01f, 6), 3.5f, 0.02f, water, false);
-            var rng = new System.Random(3);
-            for (int i = 0; i < 9; i++)
-            {
-                float a = (float)rng.NextDouble() * Mathf.PI * 2f;
-                float r = 10f + (float)rng.NextDouble() * 9f;
-                Tree(root, new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r), 0.9f + (float)rng.NextDouble() * 0.6f, trunk, leaves);
-            }
-            Color[] flowerColors = { new Color(1f, 0.6f, 0.8f), new Color(1f, 0.95f, 0.4f), new Color(0.7f, 0.6f, 1f), Color.white };
-            for (int i = 0; i < 60; i++)
-            {
-                float a = (float)rng.NextDouble() * Mathf.PI * 2f;
-                float r = 3f + (float)rng.NextDouble() * 16f;
-                var fm = Mat("Flower" + (i % 4), flowerColors[i % 4]);
-                Sphere("Flower", root, new Vector3(Mathf.Cos(a) * r, 0.15f, Mathf.Sin(a) * r), 0.18f, fm);
-            }
-            var bench = Mat("Bench", new Color(0.55f, 0.38f, 0.25f));
-            Box("BenchSeat", root, new Vector3(0, 0.45f, 2.5f), new Vector3(1.8f, 0.08f, 0.5f), bench);
-            Box("BenchBack", root, new Vector3(0, 0.8f, 2.75f), new Vector3(1.8f, 0.5f, 0.06f), bench);
-            var ff = Group("Fireflies", root);
-            ff.transform.localPosition = new Vector3(0, 1.2f, 0);
-            ff.AddComponent<FirefliesSpawner>().radius = 14f;
-
-            var safe = Group("SafeRoom", root).AddComponent<SafeRoom>();
-            safe.spawnPoint = Point("Spawn", safe.transform, new Vector3(0, 0, -3), 0f);
-            safe.panelPoint = PanelPoint("Panel", root, new Vector3(-2.6f, 1.6f, 0.5f), c + new Vector3(0, 1.6f, -3f));
         }
 
         static void Ground(Transform parent, float size, Material mat, float y = 0f, bool teleport = false)

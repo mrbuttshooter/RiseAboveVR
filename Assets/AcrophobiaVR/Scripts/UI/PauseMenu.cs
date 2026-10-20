@@ -50,14 +50,9 @@ namespace AcrophobiaVR
                 Resume();
                 return;
             }
-            if (SafeRoom.InSafeRoom)
-            {
-                if (SafeRoom.Instance != null) SafeRoom.Instance.Toggle();
-                return;
-            }
             var lc = LevelController.Instance;
-            // Ratings, the summary and the out-of-lives screen take priority over pausing.
-            if (lc == null || lc.IsRespawning || Dialog.AnyOpen || RatingPanel.IsOpen) return;
+            // The summary and the out-of-lives screen take priority over pausing.
+            if (lc == null || lc.IsRespawning || Dialog.AnyOpen) return;
             Open(lc);
         }
 
@@ -66,16 +61,11 @@ namespace AcrophobiaVR
             savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
             Time.timeScale = 0f;
             string body = lc.Started
-                ? "Time " + LevelController.FormatTime(lc.ElapsedSeconds) + "     Tasks " + lc.TasksDone + " / " + lc.objectives.Length
+                ? "Time " + LevelController.FormatTime(lc.ElapsedSeconds) + (lc.TimeLimit > 0f ? " / " + LevelController.FormatTime(lc.TimeLimit) : "") + "     Goals " + lc.TasksDone + " / " + lc.objectives.Length
                 : "The level hasn't started yet.";
-            body += "\nDifficulty: " + ExposureSettings.DisplayName(ExposureSettings.Mode);
+            body += "\nDifficulty: " + Difficulty.DisplayName(Difficulty.Level);
             dialog = Dialog.Show("Paused", body,
                 new Dialog.Choice("Resume", Resume, UIFactory.Calm * 0.8f),
-                new Dialog.Choice("Calm Meadow", () =>
-                {
-                    Resume();
-                    if (SafeRoom.Instance != null) SafeRoom.Instance.Toggle();
-                }),
                 new Dialog.Choice("Restart level", () =>
                 {
                     Resume();
@@ -88,7 +78,7 @@ namespace AcrophobiaVR
                     SessionLogger.Log(SceneManager.GetActiveScene().name, "level_abandoned");
                     GameManager.Instance.LoadMenu();
                 }));
-            UIFactory.HeartRow(dialog.Content, lc.Lives, LevelController.MaxLives, new Vector2(0, 205), 58f);
+            UIFactory.HeartRow(dialog.Content, lc.Lives, lc.MaxLives, new Vector2(0, 205), 58f);
         }
 
         void Resume()

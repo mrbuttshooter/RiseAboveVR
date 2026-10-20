@@ -48,7 +48,7 @@ namespace AcrophobiaVR
             var rig = PlayerRig.Instance;
             float h = rig != null ? rig.Head.position.y - groundY : 0f;
             float k = Mathf.Clamp01(h / maxHeight);
-            float windMul = ExposureSettings.WindMultiplier(ExposureSettings.Mode);
+            float windMul = Difficulty.Wind;
             windTarget = meadow ? 0.04f : Mathf.Lerp(0.05f, 0.55f, Mathf.Sqrt(k)) * windMul + GustBoost * 0.45f * windMul;
             cityVol = meadow ? 0f : cityLevel * Mathf.Lerp(0.35f, 0.08f, k);
             padVol = meadow ? 0.12f : 0.035f;

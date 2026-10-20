@@ -22,16 +22,16 @@ namespace AcrophobiaVR
 
         public static readonly string[] LevelTitles =
         {
-            "Level 1 - The Cafe",
-            "Level 2 - The Construction Site",
-            "Level 3 - The Skyscraper Beam",
+            "Level 1 - Rooftop Chase",
+            "Level 2 - Crane Rush",
+            "Level 3 - Skyline Gauntlet",
         };
 
         public static readonly string[] LevelDescriptions =
         {
-            "Walk on glass, rescue a parrot on a ledge, climb to the roof.",
-            "Ride an open lift, outsmart a loose board, plant a flag on a crane.",
-            "A beam, crumbling tiles, a broken rope bridge - and a helicopter.",
+            "Kiwi escaped! Chase her over gaps, shattering skylights, a swinging board and a windy ledge.",
+            "Beat the storm: beam rides, a sweeping boom, falling steel, a swinging hook and a crane jib.",
+            "Tightrope, zipline, window cradle, a shattering glass bridge - then jump for the helicopter.",
         };
 
         const string UnlockKey = "acro_highest_unlocked";

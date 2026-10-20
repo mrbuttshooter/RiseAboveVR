@@ -33,7 +33,7 @@ namespace AcrophobiaVR
 
         void Schedule()
         {
-            float wind = Mathf.Max(0.3f, ExposureSettings.WindMultiplier(ExposureSettings.Mode));
+            float wind = Mathf.Max(0.3f, Difficulty.Wind);
             nextGust = Time.time + Random.Range(interval.x, interval.y) / wind;
         }
 
@@ -47,7 +47,7 @@ namespace AcrophobiaVR
         {
             var rig = PlayerRig.Instance;
             var lc = LevelController.Instance;
-            bool inside = rig != null && lc != null && lc.Started && !lc.IsRespawning && !SafeRoom.InSafeRoom && Contains(rig.Head.position);
+            bool inside = rig != null && lc != null && lc.Started && !lc.Finished && !lc.IsRespawning && Contains(rig.Head.position);
             if (!inside)
             {
                 // Keep the next gust a little way off so stepping in never means an instant shove.
@@ -73,7 +73,6 @@ namespace AcrophobiaVR
                 Schedule();
                 ProceduralAudio.PlayWhoosh(1f);
                 Haptics.Pulse(0.7f, 0.5f);
-                FearSystem.Spike(0.15f);
                 if (streaks != null)
                 {
                     // The streak emitter blows along its local +X.
@@ -86,7 +85,7 @@ namespace AcrophobiaVR
             bool gust = t >= 0f && t < 1f;
             SetGusting(gust);
             if (!gust) return;
-            float speed = pushSpeed * Mathf.Sin(t * Mathf.PI) * ExposureSettings.WindMultiplier(ExposureSettings.Mode);
+            float speed = pushSpeed * Mathf.Sin(t * Mathf.PI) * Difficulty.Wind;
             if (!rig.IsDesktop) speed *= vrScale;
             if (lc.IsCrouching) speed *= 0.12f;
             rig.MoveBy(dir * speed * Time.deltaTime);

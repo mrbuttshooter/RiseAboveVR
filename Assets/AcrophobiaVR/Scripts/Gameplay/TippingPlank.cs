@@ -67,7 +67,6 @@ namespace AcrophobiaVR
                     wobbleStart = Time.time;
                     ProceduralAudio.PlayCreakAt(pivot.position, 1f);
                     Haptics.Medium();
-                    FearSystem.Spike(0.3f);
                     Companion.Say(warnLine, 2.5f);
                 }
                 float w = Time.time - wobbleStart;

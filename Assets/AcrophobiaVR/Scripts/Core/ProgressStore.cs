@@ -1,76 +1,52 @@
-using System.Collections.Generic;
-using System.Globalization;
 using UnityEngine;
 
 namespace AcrophobiaVR
 {
     /// <summary>
-    /// Per-level results stored in PlayerPrefs: best stars, best time and the history of
-    /// before/after anxiety ratings (shown as a graph on the trophy wall).
+    /// Per-level results stored in PlayerPrefs: best medal (0 none, 1 bronze, 2 silver, 3 gold), best time
+    /// and best score.
     /// </summary>
     public static class ProgressStore
     {
-        public struct RatingPair
-        {
-            public int Before;
-            public int After;
-        }
+        static string MedalKey(int level) => "rise_medal_" + level;
+        static string TimeKey(int level) => "rise_besttime_" + level;
+        static string ScoreKey(int level) => "rise_bestscore_" + level;
 
-        const int MaxHistory = 8;
-
-        static string StarsKey(int level) => "acro_stars_" + level;
-        static string TimeKey(int level) => "acro_besttime_" + level;
-        static string HistoryKey(int level) => "acro_history_" + level;
-
-        public static int GetStars(int level) => PlayerPrefs.GetInt(StarsKey(level), 0);
-
+        public static int GetMedal(int level) => PlayerPrefs.GetInt(MedalKey(level), 0);
         public static float GetBestTime(int level) => PlayerPrefs.GetFloat(TimeKey(level), 0f);
+        public static int GetBestScore(int level) => PlayerPrefs.GetInt(ScoreKey(level), 0);
 
-        public static void RecordResult(int level, int stars, float seconds, int before, int after)
+        /// <summary>Stores a finished run; returns true when the score is a new personal best.</summary>
+        public static bool RecordResult(int level, int medal, float seconds, int score)
         {
-            if (stars > GetStars(level)) PlayerPrefs.SetInt(StarsKey(level), stars);
+            if (medal > GetMedal(level)) PlayerPrefs.SetInt(MedalKey(level), medal);
             float best = GetBestTime(level);
             if (best <= 0f || seconds < best) PlayerPrefs.SetFloat(TimeKey(level), seconds);
-
-            var history = GetHistory(level);
-            history.Add(new RatingPair { Before = before, After = after });
-            while (history.Count > MaxHistory) history.RemoveAt(0);
-            var parts = new List<string>();
-            foreach (var h in history) parts.Add(h.Before + ":" + h.After);
-            PlayerPrefs.SetString(HistoryKey(level), string.Join(";", parts));
+            bool newBest = score > GetBestScore(level);
+            if (newBest) PlayerPrefs.SetInt(ScoreKey(level), score);
             PlayerPrefs.Save();
+            return newBest;
         }
 
-        public static List<RatingPair> GetHistory(int level)
-        {
-            var list = new List<RatingPair>();
-            string raw = PlayerPrefs.GetString(HistoryKey(level), "");
-            if (string.IsNullOrEmpty(raw)) return list;
-            foreach (var entry in raw.Split(';'))
-            {
-                var p = entry.Split(':');
-                if (p.Length == 2 &&
-                    int.TryParse(p[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) &&
-                    int.TryParse(p[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int a))
-                    list.Add(new RatingPair { Before = b, After = a });
-            }
-            return list;
-        }
-
-        public static int TotalStars()
+        public static int TotalMedals()
         {
             int total = 0;
-            for (int i = 0; i < GameManager.LevelScenes.Length; i++) total += GetStars(i);
+            for (int i = 0; i < GameManager.LevelScenes.Length; i++) total += GetMedal(i);
             return total;
         }
+
+        public static string MedalName(int medal) => medal >= 3 ? "Gold" : medal == 2 ? "Silver" : medal == 1 ? "Bronze" : "No medal";
+
+        public static Color MedalColor(int medal) =>
+            medal >= 3 ? new Color(1f, 0.84f, 0.3f) : medal == 2 ? new Color(0.8f, 0.84f, 0.9f) : medal == 1 ? new Color(0.85f, 0.55f, 0.3f) : new Color(0.6f, 0.6f, 0.6f);
 
         public static void ResetAll()
         {
             for (int i = 0; i < GameManager.LevelScenes.Length; i++)
             {
-                PlayerPrefs.DeleteKey(StarsKey(i));
+                PlayerPrefs.DeleteKey(MedalKey(i));
                 PlayerPrefs.DeleteKey(TimeKey(i));
-                PlayerPrefs.DeleteKey(HistoryKey(i));
+                PlayerPrefs.DeleteKey(ScoreKey(i));
             }
             PlayerPrefs.Save();
         }

@@ -33,18 +33,17 @@ namespace AcrophobiaVR
 
         public static readonly Def[] All =
         {
-            new Def("first_look", "First Look Down", "Finish a look-down task"),
-            new Def("glass_walker", "Glass Walker", "Reach the end of the glass skywalk"),
-            new Def("panic_beaten", "Rode the Wave", "Beat a panic wave by looking up"),
-            new Def("steady_feet", "Steady Feet", "Finish a level with no slips"),
-            new Def("star_collector", "Star Collector", "Collect every courage star in a level"),
-            new Def("all_stars", "Rise Above", "Earn all 9 stars"),
-            new Def("sky_high", "Sky High", "Complete the skyscraper"),
-            new Def("brave_soul", "Brave Soul", "Finish a level in Brave mode"),
-            new Def("cat_rescuer", "Cat Rescuer", "Rescue Mittens"),
-            new Def("calm_breather", "Calm Breather", "Complete a full breathing exercise"),
-            new Def("photographer", "Photographer", "Take 5 brave photos"),
-            new Def("elevator_100", "Cloud Walker", "Ride the Courage Elevator to 100 m"),
+            new Def("first_finish", "Made It", "Finish any level"),
+            new Def("kiwi_caught", "Bird Catcher", "Catch Kiwi on the rooftops"),
+            new Def("storm_beater", "Storm Beater", "Reach the crane top before the storm"),
+            new Def("sky_high", "Last Chopper Out", "Catch the helicopter in the Skyline Gauntlet"),
+            new Def("steady_feet", "Untouchable", "Finish a level without falling once"),
+            new Def("star_collector", "Star Hunter", "Collect every star in a level"),
+            new Def("gold_rush", "Gold Rush", "Win a gold medal"),
+            new Def("all_stars", "Triple Gold", "Win gold on all three levels"),
+            new Def("brave_soul", "Hardcore", "Finish a level on Hard"),
+            new Def("last_life", "By a Thread", "Finish a level on your last life"),
+            new Def("photo_finish", "Photo Finish", "Finish with under 5 seconds on the clock"),
         };
 
         /// <summary>Raised after a new achievement is unlocked (argument: id).</summary>

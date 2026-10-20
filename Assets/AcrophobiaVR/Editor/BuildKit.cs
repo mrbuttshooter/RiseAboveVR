@@ -28,7 +28,7 @@ namespace AcrophobiaVR.EditorTools
             { "Grass", Surface.Grass }, { "MeadowGrass", Surface.Grass }, { "Dirt", Surface.Dirt },
             { "Deck", Surface.Wood }, { "Plank", Surface.Wood }, { "Bench", Surface.Wood }, { "BenchWood", Surface.Wood }, { "DoorWood", Surface.Wood }, { "TankWood", Surface.Wood },
             { "SteelRed", Surface.Metal }, { "SteelDark", Surface.Metal }, { "Scaffold", Surface.Metal }, { "RailMetal", Surface.Metal }, { "CraneYellow", Surface.Metal },
-            { "ContainerBlue", Surface.Metal }, { "ContainerWhite", Surface.Metal }, { "LampMetal", Surface.Metal },
+            { "ContainerBlue", Surface.Metal }, { "ContainerWhite", Surface.Metal }, { "LampMetal", Surface.Metal }, { "SafetyOrange", Surface.Metal }, { "RoofHousing", Surface.Concrete }, { "RoofDoor", Surface.Metal }, { "VentPipe", Surface.Metal }, { "GripBlack", Surface.Metal }, { "SteelCable", Surface.Metal },
             { "Grate", Surface.Grate }, { "Tile", Surface.Tiles }, { "RoofGravel", Surface.RoofGravel },
             { "Bldg1", Surface.BrickFacade }, { "Bldg2", Surface.PlasterFacade }, { "Bldg3", Surface.OfficeFacade }, { "Bldg4", Surface.BrickFacade },
             { "Glass Tower", Surface.GlassFacade }, { "TowerDark", Surface.GlassFacade },
@@ -314,8 +314,8 @@ namespace AcrophobiaVR.EditorTools
             if (middleRail)
             {
                 var mid = Bar("MidRail", g.transform, from + Vector3.up * height * 0.5f, to + Vector3.up * height * 0.5f, 0.04f, mat);
-                var ev = mid.AddComponent<ExposureVisual>();
-                ev.gentle = true; ev.standard = true; ev.brave = false;
+                var ev = mid.AddComponent<DifficultyVisual>();
+                ev.easy = true; ev.normal = true; ev.hard = false;
             }
             // Railings are an Easy-mode helper only: on Normal and Hard every edge is open and falls are real.
             ShowIn(g, true, false, false);
@@ -612,22 +612,22 @@ namespace AcrophobiaVR.EditorTools
             Vector3 center = (from + to) * 0.5f + Vector3.up * height * 0.5f;
             var go = Box(name, parent, center, new Vector3(0.03f, height, Vector3.Distance(from, to)), glass, true, false);
             go.transform.localRotation = Quaternion.LookRotation(to - from);
-            var ev = go.AddComponent<ExposureVisual>();
-            ev.gentle = true; ev.standard = false; ev.brave = false;
+            var ev = go.AddComponent<DifficultyVisual>();
+            ev.easy = true; ev.normal = false; ev.hard = false;
             return go;
         }
 
         public static T Exposure<T>(GameObject go, bool gentle, bool standard, bool brave) where T : Component
         {
-            var ev = go.AddComponent<ExposureVisual>();
-            ev.gentle = gentle; ev.standard = standard; ev.brave = brave;
+            var ev = go.AddComponent<DifficultyVisual>();
+            ev.easy = gentle; ev.normal = standard; ev.hard = brave;
             return go.GetComponent<T>();
         }
 
         public static void ShowIn(GameObject go, bool gentle, bool standard, bool brave)
         {
-            var ev = go.AddComponent<ExposureVisual>();
-            ev.gentle = gentle; ev.standard = standard; ev.brave = brave;
+            var ev = go.AddComponent<DifficultyVisual>();
+            ev.easy = gentle; ev.normal = standard; ev.hard = brave;
         }
 
         public static Transform Point(string name, Transform parent, Vector3 pos, float yaw = 0f)
@@ -782,15 +782,17 @@ namespace AcrophobiaVR.EditorTools
             return pivot;
         }
 
-        public static void AddClimbRungs(Transform ladder, Vector3 bottom, Vector3 top, float width, Material mat)
+        public static void AddClimbRungs(Transform ladder, Vector3 bottom, Vector3 top, float width, Material mat, Vector3? across = null)
         {
-            Bar("RailL", ladder, bottom + Vector3.left * width * 0.5f, top + Vector3.left * width * 0.5f, 0.05f, mat, true, false);
-            Bar("RailR", ladder, bottom + Vector3.right * width * 0.5f, top + Vector3.right * width * 0.5f, 0.05f, mat, true, false);
+            // Rungs run along 'across' (default: world X, for a ladder on a wall facing -Z / +Z).
+            Vector3 side = (across ?? Vector3.right).normalized;
+            Bar("RailL", ladder, bottom - side * width * 0.5f, top - side * width * 0.5f, 0.05f, mat, true, false);
+            Bar("RailR", ladder, bottom + side * width * 0.5f, top + side * width * 0.5f, 0.05f, mat, true, false);
             int rungs = Mathf.FloorToInt(Vector3.Distance(bottom, top) / 0.3f);
             for (int i = 1; i < rungs; i++)
             {
                 Vector3 p = Vector3.Lerp(bottom, top, i / (float)rungs);
-                var rung = Bar("Rung", ladder, p + Vector3.left * width * 0.5f, p + Vector3.right * width * 0.5f, 0.04f, mat, true, false);
+                var rung = Bar("Rung", ladder, p - side * width * 0.5f, p + side * width * 0.5f, 0.04f, mat, true, false);
                 rung.AddComponent<ClimbInteractable>();
                 // ClimbInteractable requires a Rigidbody and Unity adds a dynamic one, which drops every rung on play.
                 var rungBody = rung.GetComponent<Rigidbody>();

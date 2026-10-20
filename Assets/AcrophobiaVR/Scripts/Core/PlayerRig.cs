@@ -78,6 +78,11 @@ namespace AcrophobiaVR
 
             Physics.SyncTransforms();
             if (ccWasEnabled) characterController.enabled = true;
+            if (IsDesktop)
+            {
+                var desktop = root.GetComponent<DesktopRig>();
+                if (desktop != null) desktop.FaceDirection(forward);
+            }
         }
 
         public void TeleportTo(Transform point) => TeleportTo(point.position, point.forward);
@@ -100,6 +105,49 @@ namespace AcrophobiaVR
                     if (p != null) p.enabled = enabled;
             if (characterController != null) characterController.enabled = enabled;
             Physics.SyncTransforms();
+        }
+
+        /// <summary>
+        /// Race rules for VR locomotion: no teleporting or grab-moving across gaps, one jump (no double jump),
+        /// a running pace. Desktop mode has its own controls (DesktopRig).
+        /// </summary>
+        public void ConfigureForRunning()
+        {
+            if (origin == null) return;
+            foreach (var tp in origin.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationProvider>(true)) tp.enabled = false;
+            foreach (var gm in origin.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.GrabMoveProvider>(true)) gm.enabled = false;
+            foreach (var gm in origin.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.TwoHandedGrabMoveProvider>(true)) gm.enabled = false;
+            foreach (var t in origin.GetComponentsInChildren<Transform>(true))
+                if (t.name.Contains("Teleport Interactor")) t.gameObject.SetActive(false);
+            foreach (var j in origin.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Jump.JumpProvider>(true))
+            {
+                j.jumpHeight = JumpHeight;
+                j.unlimitedInAirJumps = false;
+                j.inAirJumpCount = 0;
+            }
+            foreach (var m in origin.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement.ContinuousMoveProvider>(true))
+                m.moveSpeed = RunSpeed;
+        }
+
+        /// <summary>Jump apex height (m) for VR and desktop.</summary>
+        public const float JumpHeight = 1.05f;
+        /// <summary>VR stick speed (m/s); desktop walks at this and sprints faster.</summary>
+        public const float RunSpeed = 3.4f;
+
+        /// <summary>The collider the player is standing on (null when airborne).</summary>
+        public Collider GroundCollider()
+        {
+            Vector3 feet = Root.position;
+            if (characterController != null && characterController.enabled)
+            {
+                Vector3 c = characterController.transform.TransformPoint(characterController.center);
+                feet = new Vector3(c.x, Root.position.y, c.z);
+            }
+            else
+            {
+                feet = new Vector3(Head.position.x, Root.position.y, Head.position.z);
+            }
+            return Physics.SphereCast(feet + Vector3.up * 0.4f, 0.15f, Vector3.down, out RaycastHit hit, 0.55f, ~0, QueryTriggerInteraction.Ignore) ? hit.collider : null;
         }
 
         /// <summary>Point roughly in front of the eyes, used to place floating panels.</summary>

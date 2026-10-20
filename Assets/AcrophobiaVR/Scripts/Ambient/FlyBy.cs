@@ -71,7 +71,6 @@ namespace AcrophobiaVR
                         if (!washed)
                         {
                             washed = true;
-                            FearSystem.Spike(0.35f);
                             ProceduralAudio.PlayWhoosh(1f);
                         }
                     }

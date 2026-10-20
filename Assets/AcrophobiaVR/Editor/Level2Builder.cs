@@ -5,7 +5,7 @@ namespace AcrophobiaVR.EditorTools
 {
     public static partial class LevelBuilder
     {
-        // ------------------------------------------------------------------ LEVEL 2: CONSTRUCTION SITE (25-31 m)
+        // ------------------------------------------------------------------ LEVEL 2: CRANE RUSH (6-28 m)
         static void BuildLevel2()
         {
             var scene = NewScene();
@@ -54,260 +54,6 @@ namespace AcrophobiaVR.EditorTools
             if (cabin != null) SolidBounds(cabin);
             else Box("SiteOffice", env, new Vector3(-20, 1.3f, 12), new Vector3(2.5f, 2.6f, 6f), Mat("ContainerWhite", new Color(0.9f, 0.9f, 0.88f)));
 
-            // Building A: steel frame, slab at 12 m and roof slab at 25 m
-            var bldg = Group("BuildingA", env).transform;
-            foreach (var x in new[] { -6f, 0f, 6f })
-                foreach (var z in new[] { 0f, 6f, 12f })
-                    Box("Column", bldg, new Vector3(x, 12.5f, z), new Vector3(0.4f, 25f, 0.4f), steel);
-            Floor("Slab12", bldg, -6f, 6f, 6f, 12f, 12f, 0.3f, concrete, false);
-            Floor("Roof25", bldg, -6.2f, 6.2f, -0.2f, 12.2f, 25f, 0.3f, concrete, true);
-            // Edge barriers on the roof (Easy only), with gaps for lift and plank
-            void Barrier(Vector3 a, Vector3 b)
-            {
-                Railing("EdgeBarrier", bldg, a, b, 1.0f, yellow, true, 2f);
-                SafetyGlass("EdgeMesh", bldg, a, b, 0.95f, mesh);
-            }
-            Barrier(new Vector3(-6.2f, 25f, -0.2f), new Vector3(6.2f, 25f, -0.2f));
-            Barrier(new Vector3(-6.2f, 25f, 12.2f), new Vector3(-0.6f, 25f, 12.2f));
-            Barrier(new Vector3(0.6f, 25f, 12.2f), new Vector3(6.2f, 25f, 12.2f));
-            Barrier(new Vector3(-6.2f, 25f, -0.2f), new Vector3(-6.2f, 25f, 2.6f));
-            Barrier(new Vector3(-6.2f, 25f, 5.4f), new Vector3(-6.2f, 25f, 12.2f));
-            Barrier(new Vector3(6.2f, 25f, -0.2f), new Vector3(6.2f, 25f, 5.3f));
-            Barrier(new Vector3(6.2f, 25f, 6.7f), new Vector3(6.2f, 25f, 12.2f));
-            // A low toe-board on the south edge - the only thing between you and 25 m of air
-            Box("ToeBoard", bldg, new Vector3(0, 25.08f, -0.15f), new Vector3(12.4f, 0.15f, 0.06f), hazard, false, false);
-            // Gusts sweep across the open roof (east / west) - crouch or get pushed towards an edge
-            var roofWind = Group("RoofWind", game).AddComponent<GustZone>();
-            roofWind.transform.position = new Vector3(0f, 26.5f, 6f);
-            roofWind.size = new Vector3(12.4f, 4f, 12.4f);
-            roofWind.pushDirection = Vector3.right;
-            roofWind.randomSide = true;
-            roofWind.interval = new Vector2(9f, 14f);
-            roofWind.pushSpeed = 1.1f;
-
-            // Lift tower + platform
-            var liftTower = Group("LiftTower", env).transform;
-            foreach (var x in new[] { -9.2f, -6.3f })
-                foreach (var z in new[] { 2.5f, 5.5f })
-                    Box("LiftMast", liftTower, new Vector3(x, 13.5f, z), new Vector3(0.18f, 27f, 0.18f), yellow);
-            Box("LiftHead", liftTower, new Vector3(-7.75f, 27f, 4f), new Vector3(3.2f, 0.3f, 3.4f), yellow);
-            var lift = Group("Lift", game);
-            lift.transform.position = new Vector3(-7.75f, 0f, 4f);
-            var liftVisual = Group("Visual", lift.transform).transform;
-            var deck = Box("Deck", liftVisual, new Vector3(0, -0.1f, 0), new Vector3(2.5f, 0.2f, 2.5f), grate, true, false);
-            Railing("LiftRailBack", liftVisual, new Vector3(-1.2f, 0, -1.2f), new Vector3(-1.2f, 0, 1.2f), 1.1f, yellow, true, 1.2f);
-            Railing("LiftRailL", liftVisual, new Vector3(-1.2f, 0, -1.2f), new Vector3(1.2f, 0, -1.2f), 1.1f, yellow, true, 1.2f);
-            Railing("LiftRailR", liftVisual, new Vector3(-1.2f, 0, 1.2f), new Vector3(1.2f, 0, 1.2f), 1.1f, yellow, true, 1.2f);
-            SafetyGlass("LiftMeshL", liftVisual, new Vector3(-1.2f, 0, -1.2f), new Vector3(1.2f, 0, -1.2f), 1.05f, mesh);
-            SafetyGlass("LiftMeshR", liftVisual, new Vector3(-1.2f, 0, 1.2f), new Vector3(1.2f, 0, 1.2f), 1.05f, mesh);
-            SafetyGlass("LiftMeshBack", liftVisual, new Vector3(-1.2f, 0, -1.2f), new Vector3(-1.2f, 0, 1.2f), 1.05f, mesh);
-            var mp = lift.AddComponent<MovingPlatform>();
-            mp.swingVisual = liftVisual;
-            mp.speed = 1.1f;
-            mp.waypoints = new[]
-            {
-                Point("Bottom", env, new Vector3(-7.75f, 0f, 4f)),
-                Point("Middle", env, new Vector3(-7.75f, 12f, 4f)),
-                Point("Top", env, new Vector3(-7.75f, 25f, 4f)),
-            };
-            mp.stallAtWaypoint = 1;
-            mp.stallSeconds = 6f;
-            mp.startLine = "Going up! No rails on this lift - stay in the middle and watch the ground shrink.";
-            mp.rideZone = Zone<HeadZoneRide>("RideZone", lift.transform, new Vector3(0, 1.2f, 0), new Vector3(2.3f, 2.6f, 2.3f));
-            SignBoard("CallSign", env, new Vector3(-7.75f, 2.4f, 1.6f), new Vector2(1.6f, 0.4f), "SITE HOIST", Mat("SignYellow", new Color(0.95f, 0.75f, 0.1f), 0.35f), new Color(0.05f, 0.05f, 0.05f), 2.2f);
-            var liftArrive = Zone<CheckpointZone>("CP Roof", game, new Vector3(-4.5f, 26.2f, 4f), new Vector3(3f, 2.4f, 3f));
-            liftArrive.label = "Roof (25 m)";
-            liftArrive.respawnPoint = Point("CP Roof Spawn", game, new Vector3(-4.5f, 25f, 4f), 90f);
-            liftArrive.companionLine = "Twenty-five metres up. Feel your feet on the concrete. Solid.";
-            mp.arrivalCheckpoint = liftArrive;
-            var rideUp = Zone<ReachObjective>("ReachRoof", game, new Vector3(-3f, 26.2f, 4f), new Vector3(5f, 2.4f, 6f));
-            rideUp.description = "Ride the open lift to the roof (25 m)";
-
-            // A loose board sticking out off the north edge (hammer at the end) - a see-saw puzzle:
-            // walk out on it unweighted and it tips you off. Drop the cement bag on the inner end first.
-            var dive = Group("LooseBoard", game).transform;
-            var tipPivot = Group("TipPivot", dive).transform;
-            tipPivot.position = new Vector3(0, 25f, 12.2f);
-            var diveVisual = Group("Visual", tipPivot).transform;
-            diveVisual.position = new Vector3(0, 25f, 13f);
-            Box("Plank", diveVisual, new Vector3(0, 0.04f, 0), new Vector3(0.8f, 0.08f, 4.4f), plankMat, true, false);
-            var diveBeam = dive.gameObject.AddComponent<BalanceBeam>();
-            diveBeam.start = Point("Start", dive, new Vector3(0, 25.08f, 12.2f));
-            diveBeam.end = Point("End", dive, new Vector3(0, 25.08f, 15.2f));
-            diveBeam.walkableHalfWidth = 0.4f;
-            diveBeam.wobbleVisual = diveVisual;
-
-            var bag = Group("CementBag", game);
-            bag.transform.position = new Vector3(-3.5f, 25.13f, 9.5f);
-            if (PolyProp("cement_bag", bag.transform, new Vector3(0f, -0.12f, 0f), 0f, 1f, 0.24f) == null)
-            {
-                Box("Sack", bag.transform, Vector3.zero, new Vector3(0.5f, 0.24f, 0.34f), Mat("CementSack", new Color(0.72f, 0.68f, 0.6f)), false, false);
-                Box("Label", bag.transform, new Vector3(0, 0.121f, 0), new Vector3(0.3f, 0.005f, 0.2f), Mat("SackLabel", new Color(0.8f, 0.2f, 0.15f)), false, false);
-            }
-            var bagCol = bag.AddComponent<BoxCollider>();
-            bagCol.size = new Vector3(0.5f, 0.24f, 0.34f);
-            MakeGrabbable(bag, true);
-            bag.AddComponent<ReturnIfLost>();
-            var weigh = Group("WeighBoard", game).AddComponent<DeliverObjective>();
-            weigh.description = "Weigh down the loose board with the cement bag";
-            weigh.companionLineOnComplete = "Thud! That board isn't going anywhere now. Go get that hammer!";
-            weigh.item = bag.transform;
-            var weighTarget = new GameObject("BoardWeightTarget");
-            weighTarget.transform.SetParent(game, false);
-            weighTarget.transform.position = new Vector3(0f, 25.5f, 11.3f);
-            var wbox = weighTarget.AddComponent<BoxCollider>();
-            wbox.isTrigger = true;
-            wbox.size = new Vector3(1.2f, 1.2f, 1.4f);
-            weighTarget.layer = 2;
-            weigh.target = wbox;
-            weigh.snapPoint = Point("BoardWeightSnap", game, new Vector3(0f, 25.2f, 11.1f));
-            var tipper = dive.gameObject.AddComponent<TippingPlank>();
-            tipper.pivot = tipPivot;
-            tipper.outward = Vector3.forward;
-            tipper.overhang = 3f;
-            tipper.halfWidth = 0.4f;
-            tipper.stabilizer = weigh;
-            Zone<SayZone>("LooseBoardHint", game, new Vector3(0f, 26.2f, 10.6f), new Vector3(2f, 2.4f, 1.2f)).line =
-                "That board is just lying loose over the edge - see how it rocks? Put something heavy on this end before you walk out.";
-
-            // Plank bridge to the scaffold tower: three variants by exposure mode
-            BuildPlankVariant(game, "PlankBridge Gentle", 1.0f, plankMat, rope, mesh, true, true, true, false, false);
-            BuildPlankVariant(game, "PlankBridge Standard", 0.6f, plankMat, rope, mesh, false, true, false, true, false);
-            BuildPlankVariant(game, "PlankBridge Brave", 0.45f, plankMat, rope, mesh, false, false, false, false, true);
-
-            // Scaffold tower B (25 m deck) and crane base (31 m deck)
-            var tower = Group("ScaffoldTower", env).transform;
-            foreach (var x in new[] { 12f, 16f })
-                foreach (var z in new[] { 4f, 8f })
-                    Box("Pole", tower, new Vector3(x, 12.5f, z), new Vector3(0.1f, 25f, 0.1f), scaffold);
-            for (int lvl = 1; lvl <= 4; lvl++)
-            {
-                Bar("Brace", tower, new Vector3(12, lvl * 6f - 3f, 4), new Vector3(16, lvl * 6f, 4), 0.06f, scaffold);
-                Bar("Brace", tower, new Vector3(12, lvl * 6f - 3f, 8), new Vector3(16, lvl * 6f, 8), 0.06f, scaffold);
-            }
-            Floor("TowerDeck", tower, 12f, 16f, 4f, 8f, 25f, 0.15f, plankMat, true);
-            Railing("TowerRailS", tower, new Vector3(12, 25, 4), new Vector3(16, 25, 4), 1.05f, scaffold);
-            Railing("TowerRailN", tower, new Vector3(12, 25, 8), new Vector3(16, 25, 8), 1.05f, scaffold);
-            var cpTower = Zone<CheckpointZone>("CP Tower", game, new Vector3(14f, 26.2f, 6f), new Vector3(3.6f, 2.4f, 3.6f));
-            cpTower.label = "Scaffold tower";
-            cpTower.respawnPoint = Point("CP Tower Spawn", game, new Vector3(13.5f, 25f, 6f), 90f);
-            cpTower.companionLine = "Across the plank! Checkpoint saved. Next: up the ladder.";
-
-            foreach (var x in new[] { 16.6f, 20.6f })
-                foreach (var z in new[] { 4f, 8f })
-                    Box("CranePole", tower, new Vector3(x, 15.5f, z), new Vector3(0.12f, 31f, 0.12f), yellow);
-            Floor("CraneDeck", tower, 16.6f, 20.6f, 4f, 8f, 31f, 0.15f, grate, true);
-            Railing("CraneRailS", tower, new Vector3(16.6f, 31, 4), new Vector3(20.6f, 31, 4), 1.05f, yellow);
-            Railing("CraneRailN", tower, new Vector3(16.6f, 31, 8), new Vector3(20.6f, 31, 8), 1.05f, yellow);
-
-            // Ladder between the decks
-            var ladderGo = Group("Ladder", game);
-            var ladder = ladderGo.AddComponent<Ladder>();
-            AddClimbRungs(ladderGo.transform, new Vector3(16.3f, 25f, 6f), new Vector3(16.3f, 32.2f, 6f), 0.6f, yellow);
-            ladder.bottom = Point("Bottom", ladderGo.transform, new Vector3(16.3f, 25f, 6f));
-            ladder.top = Point("Top", ladderGo.transform, new Vector3(16.3f, 31f, 6f));
-            ladder.topExit = Point("TopExit", ladderGo.transform, new Vector3(17.6f, 31f, 6f), 90f);
-            var climb = Zone<ReachObjective>("ReachCraneDeck", game, new Vector3(18.6f, 32.2f, 6f), new Vector3(3.6f, 2.4f, 3.6f));
-            climb.description = "Climb the ladder to the crane deck (31 m)";
-            climb.companionLineOnComplete = "Thirty-one metres! You climbed it hand over hand.";
-            var cpCrane = Zone<CheckpointZone>("CP Crane", game, new Vector3(18.6f, 32.2f, 6f), new Vector3(3.6f, 2.4f, 3.6f));
-            cpCrane.label = "Crane deck";
-            cpCrane.respawnPoint = Point("CP Crane Spawn", game, new Vector3(18f, 31f, 6f), 90f);
-
-            // Catwalk along the jib
-            BuildCatwalk(game, "Catwalk Gentle", 1.4f, grate, yellow, mesh, true, false, false, 2);
-            BuildCatwalk(game, "Catwalk Standard", 1.0f, grate, yellow, mesh, false, true, false, 2);
-            BuildCatwalk(game, "Catwalk Brave", 0.8f, grate, yellow, mesh, false, false, true, 1);
-
-            // Tools to collect
-            var tools = Group("CollectTools", game).AddComponent<CollectObjective>();
-            tools.description = "Find the 3 lost tools";
-            tools.companionLineOnComplete = "All the tools! The foreman owes you a coffee.";
-            tools.items.Add(Tool(game, "Wrench", new Vector3(5.2f, 25.25f, 11.3f), Mat("ToolSteel", new Color(0.7f, 0.72f, 0.75f), 0.8f, 0.9f), new Vector3(0.35f, 0.05f, 0.08f), "adjustable_wrench"));
-            var hammer = Tool(game, "Hammer", new Vector3(0f, 25.25f, 14.8f), Mat("ToolRed", new Color(0.8f, 0.15f, 0.12f)), new Vector3(0.1f, 0.06f, 0.35f));
-            hammer.transform.SetParent(tipPivot, true); // it rides the board if the board tips
-            tools.items.Add(hammer);
-            tools.items.Add(Tool(game, "Hard hat", new Vector3(15.3f, 25.2f, 7.3f), yellow, new Vector3(0.28f, 0.16f, 0.32f)));
-
-            // Flag to plant at the end of the jib
-            var flag = Group("Flag", game);
-            flag.transform.position = new Vector3(19.8f, 31.6f, 7.4f);
-            Bar("FlagPole", flag.transform, new Vector3(0, -0.5f, 0), new Vector3(0, 0.9f, 0), 0.04f, Mat("PoleWhite", Color.white), false, false);
-            Box("FlagCloth", flag.transform, new Vector3(0.28f, 0.7f, 0), new Vector3(0.5f, 0.32f, 0.01f), Glow("FlagCloth", new Color(0.2f, 0.75f, 1f), 0.6f), false, false);
-            var flagCol = flag.AddComponent<BoxCollider>();
-            flagCol.size = new Vector3(0.6f, 1.4f, 0.15f);
-            flagCol.center = new Vector3(0.15f, 0.2f, 0);
-            MakeGrabbable(flag, true);
-            flag.AddComponent<ReturnIfLost>();
-            var deliver = Group("PlantFlag", game).AddComponent<DeliverObjective>();
-            deliver.description = "Plant the flag at the end of the crane jib";
-            deliver.companionLineOnComplete = "Topping out! The flag is flying at the highest point of the site.";
-            deliver.item = flag.transform;
-            var socket = Cyl("FlagSocket", game, new Vector3(30.1f, 31f, 6f), 0.12f, 0.35f, hazard, false, false);
-            var targetGo = new GameObject("FlagTarget");
-            targetGo.transform.SetParent(game, false);
-            targetGo.transform.position = new Vector3(30.1f, 31.8f, 6f);
-            var tbox = targetGo.AddComponent<BoxCollider>();
-            tbox.isTrigger = true;
-            tbox.size = new Vector3(0.9f, 1.8f, 0.9f);
-            targetGo.layer = 2;
-            deliver.target = tbox;
-            deliver.snapPoint = Point("FlagSnap", game, new Vector3(30.1f, 31.85f, 6f), 90f);
-
-            // Crane: mast, jib and the hanging beam that carries you to the next roof
-            var crane = Group("Crane", env).transform;
-            // Open lattice like a real tower crane; the solid boxes stay as invisible colliders (the jib is walked on).
-            var mastBox = Box("Mast", crane, new Vector3(36f, 21f, 6f), new Vector3(1.6f, 42f, 1.6f), yellow);
-            var jibBox = Box("Jib", crane, new Vector3(24f, 42f, 6f), new Vector3(36f, 1.2f, 1.2f), yellow);
-            mastBox.GetComponent<MeshRenderer>().enabled = false;
-            jibBox.GetComponent<MeshRenderer>().enabled = false;
-            Lattice("MastLattice", crane, new Vector3(36f, 0f, 6f), new Vector3(36f, 42f, 6f), 1.6f, 1.6f, yellow, 1.6f);
-            Lattice("JibLattice", crane, new Vector3(42f, 42f, 6f), new Vector3(6f, 42f, 6f), 1.2f, 1.2f, yellow, 1.5f);
-            Floor("JibWalkway", crane, 6f, 42f, 5.75f, 6.25f, 42.62f, 0.04f, Mat("Grate", new Color(0.45f, 0.45f, 0.45f)), false);
-            Box("Cab", crane, new Vector3(36f, 40f, 4.5f), new Vector3(2f, 2f, 2f), Mat("CabGlass", new Color(0.3f, 0.4f, 0.5f), 0.9f));
-            Box("CounterWeight", crane, new Vector3(44f, 41f, 6f), new Vector3(4f, 3f, 2f), concrete);
-
-            var ride = Group("CraneBeamRide", game);
-            ride.transform.position = new Vector3(32.2f, 31f, 6f);
-            var rideVisual = Group("Visual", ride.transform).transform;
-            Box("IBeam", rideVisual, new Vector3(0, -0.1f, 0), new Vector3(3f, 0.2f, 1.0f), steel, true, false);
-            Box("IBeamWeb", rideVisual, new Vector3(0, -0.45f, 0), new Vector3(3f, 0.5f, 0.12f), steel, false, false);
-            foreach (var x in new[] { -1.3f, 1.3f })
-            {
-                Bar("Cable", rideVisual, new Vector3(x, 0, 0), new Vector3(0, 9f, 0), 0.03f, Mat("Cable", new Color(0.15f, 0.15f, 0.15f), 0.6f, 0.8f), false, false);
-            }
-            Bar("HoldCable", rideVisual, new Vector3(0.3f, 0, 0.42f), new Vector3(0, 9f, 0), 0.04f, Mat("Cable", new Color(0.15f, 0.15f, 0.15f), 0.6f, 0.8f), false, false);
-            var rideMp = ride.AddComponent<MovingPlatform>();
-            rideMp.swingVisual = rideVisual;
-            rideMp.swingDegrees = 2.5f;
-            rideMp.speed = 1.6f;
-            rideMp.requiredObjective = deliver;
-            rideMp.lockedHint = "Plant the flag first - then the crane will carry you across";
-            rideMp.startLine = "All aboard the crane beam! Hold the cable and enjoy the view.";
-            rideMp.waypoints = new[]
-            {
-                Point("RideStart", env, new Vector3(32.2f, 31f, 6f)),
-                Point("RideUp", env, new Vector3(32.2f, 34f, 15f)),
-                Point("RideEnd", env, new Vector3(25f, 28f, 27f)),
-            };
-            rideMp.rideZone = Zone<HeadZoneRide>("RideZone", ride.transform, new Vector3(0, 1.2f, 0), new Vector3(2.8f, 2.6f, 1.2f));
-
-            // Roof C - the goal
-            var roofC = Group("BuildingC", env).transform;
-            Box("Building", roofC, new Vector3(23f, 13.85f, 28f), new Vector3(14f, 27.7f, 12f), Mat("Bldg3", new Color(0.74f, 0.75f, 0.77f)));
-            Floor("RoofC", roofC, 16f, 30f, 22f, 34f, 28f, 0.3f, concrete, true);
-            Railing("RoofCRail", roofC, new Vector3(16, 28, 34), new Vector3(30, 28, 34), 1.1f, scaffold);
-            Cyl("Helipad", roofC, new Vector3(22f, 28.01f, 30.5f), 2.5f, 0.02f, Glow("HelipadGlow", new Color(0.3f, 1f, 0.5f), 0.8f), false);
-            var cpRoofC = Zone<CheckpointZone>("CP RoofC", game, new Vector3(23f, 29.2f, 29f), new Vector3(12f, 2.4f, 8f));
-            cpRoofC.label = "Site office roof";
-            cpRoofC.respawnPoint = Point("CP RoofC Spawn", game, new Vector3(23f, 28f, 29f), 0f);
-            rideMp.arrivalCheckpoint = cpRoofC;
-            Zone<GoalZone>("Goal (Helipad)", game, new Vector3(22f, 29.2f, 30.5f), new Vector3(4.5f, 2.4f, 4.5f));
-
-            Star(game, new Vector3(0f, 26.2f, 15.45f));
-            Star(game, new Vector3(25f, 32.0f, 7.15f));
-            Star(game, new Vector3(-6.0f, 26.0f, 12.6f));
-
             // Photo-scanned site dressing (CC0 Poly Haven).
             var siteDress = Group("ScanDressing", env).transform;
             PolyProp("wooden_crate_01", siteDress, new Vector3(-14f, 0f, 6f), 15f);
@@ -315,28 +61,22 @@ namespace AcrophobiaVR.EditorTools
             PolyProp("barrel_03", siteDress, new Vector3(-12.5f, 0f, 9f));
             PolyProp("barrel_03", siteDress, new Vector3(-11.8f, 0f, 9.6f), 40f);
             PolyProp("propane_tank", siteDress, new Vector3(-16f, 0f, 10.5f));
-            PolyProp("wooden_crate_01", siteDress, new Vector3(-3.5f, 25f, 1.2f), 30f);
-            PolyProp("barrel_03", siteDress, new Vector3(3.8f, 25f, 2f));
-            PolyProp("propane_tank", siteDress, new Vector3(4.6f, 25f, 2.4f), 10f);
             PolyProp("hand_truck", siteDress, new Vector3(-10.6f, 0f, 7.6f), 200f);
             PolyProp("portable_welding_cart", siteDress, new Vector3(-17.2f, 0f, 8.4f), 80f);
             PolyProp("plastic_crate_01", siteDress, new Vector3(-13.2f, 0f, 11f), 10f);
             PolyProp("plastic_crate_01", siteDress, new Vector3(-13.1f, 0.27f, 11.05f), 25f);
             PolyProp("cardboard_box_01", siteDress, new Vector3(-12.4f, 0f, 11.8f), 60f);
-            PolyProp("cardboard_box_01", siteDress, new Vector3(2.6f, 25f, 9.4f), 15f);
             PolyProp("wooden_ladder", siteDress, new Vector3(-18.6f, 0f, 14.6f), 90f);
             PolyProp("covered_car", siteDress, new Vector3(-30f, 0f, 2f), 5f);
 
-            var lc = CommonLevel(1, "Level 2 - The Construction Site", new Vector3(-7.75f, 0f, -5f), 0f, 0f, 45f, 0.5f);
-            lc.objectives = new Objective[] { rideUp, weigh, tools, climb, deliver };
-            lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(-4.5f, 1.8f, -3f), new Vector3(-7.75f, 1.6f, -5f));
+            var lc = BuildCraneRush(env, game, steel, yellow, concrete, plankMat, grate);
+            lc.boardPoint = PanelPoint("Board", lc.transform, new Vector3(-4.8f, 1.8f, -3.2f), new Vector3(-7.75f, 1.6f, -5f));
             lc.introLines = new[]
             {
-                "This is the Skyline Tower construction site! Our job: plant the topping-out flag at the end of the crane.",
-                "First, the open lift to the roof. It's slow and steady... mostly.",
-                "Three tools were left up there - one is on a loose board over the edge. No railings, three lives. Then a plank, a ladder and the crane.",
+                "Storm's rolling in. That helipad up there? Be on it before the clock runs out.",
+                "Ladders, a crane beam, a swinging hook and a turning jib. Don't miss.",
             };
-            lc.finishLine = "Incredible! You rode a crane beam across the sky. Level two complete!";
+            lc.finishLine = "Helipad! You beat the storm. Now beat your time.";
             Save(scene, GameManager.LevelScenes[1]);
         }
 
